@@ -1,0 +1,30 @@
+:root {
+  --modulo-violet-950: #16002f;
+  --modulo-violet-800: #3a0067;
+  --modulo-violet-700: #790069;
+  --modulo-magenta-700: #57002f;
+  --modulo-magenta-500: #b30066;
+  --modulo-lilac-300: #e581b7;
+  --modulo-lilac-100: #f6e9f1;
+  --modulo-surface: #fffaff;
+  --modulo-border: #ead8e4;
+  --modulo-text: #2e1830;
+  --modulo-muted: #705d6f;
+  color: var(--modulo-text);
+  font-family: Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--modulo-lilac-100);
+}

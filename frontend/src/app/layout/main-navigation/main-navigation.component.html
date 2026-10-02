@@ -1,0 +1,13 @@
+<mat-toolbar class="main-navigation" aria-label="Navegación principal">
+  <a class="main-navigation__brand" routerLink="/dashboard" aria-label="Modulo, ir al panel">
+    <span class="main-navigation__mark" aria-hidden="true">M</span>
+    <span>Modulo</span>
+  </a>
+
+  <nav class="main-navigation__links" aria-label="Secciones internas">
+    <a routerLink="/dashboard" routerLinkActive="main-navigation__link--active" [routerLinkActiveOptions]="{ exact: true }">Panel</a>
+    <a routerLink="/contactos" routerLinkActive="main-navigation__link--active">Contactos</a>
+    <a routerLink="/propiedades" routerLinkActive="main-navigation__link--active">Propiedades</a>
+    <a routerLink="/citas" routerLinkActive="main-navigation__link--active">Citas</a>
+  </nav>
+</mat-toolbar>

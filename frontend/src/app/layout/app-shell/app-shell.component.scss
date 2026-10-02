@@ -1,0 +1,11 @@
+.app-shell__content {
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 2rem 1.25rem 3rem;
+}
+
+@media (min-width: 48rem) {
+  .app-shell__content {
+    padding-inline: 2rem;
+  }
+}
