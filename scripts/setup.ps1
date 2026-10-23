@@ -5,6 +5,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# uv and other native commands can write normal status text to stderr.
+# Their exit codes are checked explicitly below.
+$PSNativeCommandUseErrorActionPreference = $false
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $frontendPath = Join-Path $repositoryRoot 'frontend'
 $backendPath = Join-Path $repositoryRoot 'backend'
