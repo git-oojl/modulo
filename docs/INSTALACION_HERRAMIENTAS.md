@@ -16,6 +16,18 @@ Elige `[1]` para preparar un clon con las herramientas ya instaladas. Elige `[2]
 
 La instalación inicial de Docker Desktop puede pedir que aceptes sus términos o completes WSL 2/virtualización. Ábrelo y termina esa configuración antes de volver a ejecutar el script. En macOS, Linux y Windows con una preparación manual preferida, sigue las secciones específicas de esta guía y la ruta manual del [README principal](../README.md).
 
+### Capturas del preparador
+
+El menú muestra las tres acciones disponibles:
+
+![Menu del preparador](screenshots/setup-menu.png)
+
+Este informe de `[3]` es una ejecución real en un clon sin preparar: Volta, uv, Node/npm y WSL 2 están disponibles; faltan `node_modules`, `.venv`, `backend/.env` y Docker. Las opciones de estado de Windows aparecen como informativas porque consultarlas requiere una terminal elevada.
+
+![Informe real de comprobacion de dependencias](screenshots/setup-check.png)
+
+Después de completar `[1]`, el resultado esperado termina con `[OK] Modulo esta listo para desarrollar.`. Cada sección del informe debe estar en `[OK]`; los datos de runtime deben coincidir con los archivos declarativos del proyecto. Algunas líneas `[INFO]` de características de Windows pueden permanecer cuando PowerShell no está elevado, aunque Docker y Modulo estén listos.
+
 ## Comprobar antes de instalar
 
 Ejecuta lo siguiente en una terminal nueva:

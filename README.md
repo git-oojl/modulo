@@ -35,6 +35,10 @@ Elige `[1]` si ya tienes Volta, uv y Docker listos; elige `[2]` si falta alguna 
 
 Puedes ejecutarlo de nuevo en cualquier clon: no sobrescribe `.env`, no modifica los lockfiles y aplica las migraciones pendientes. Docker Desktop debe estar iniciado antes de usar `[1]`. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles de cada opción, incluida la configuración inicial de Docker Desktop.
 
+![Menu del preparador de Windows](docs/screenshots/setup-menu.png)
+
+La [guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) también muestra el informe de comprobación `[3]`.
+
 ### Preparacion manual
 
 Usa esta ruta en macOS, Linux o si prefieres ejecutar cada paso por separado.
