@@ -95,17 +95,66 @@ function Get-PreparationChoice {
     while ($true) {
         Write-Host ''
         Write-Host 'Preparación de herramientas:'
-        Write-Host '  [I] Instalar las herramientas faltantes y configurar Volta/uv para el usuario actual'
-        Write-Host '  [C] Continuar solo con las herramientas ya instaladas'
-        Write-Host '  [S] Salir sin modificar el equipo'
-        $choice = (Read-Host 'Elige I, C o S').Trim().ToUpperInvariant()
+        Write-Host '  [1] Instalar las herramientas faltantes y configurar Volta/uv para este usuario'
+        Write-Host '  [2] Preparar Modulo con las herramientas ya instaladas, sin cambiar la configuración del usuario'
+        Write-Host '  [3] Comprobar únicamente las dependencias instaladas, sin preparar el proyecto'
+        Write-Host '  [0] Salir sin modificar el equipo'
+        $choice = (Read-Host 'Elige 1, 2, 3 o 0').Trim()
         switch ($choice) {
-            'I' { return 'Install' }
-            'C' { return 'Continue' }
-            'S' { return 'Stop' }
-            default { Write-Warning 'Respuesta no válida. Escribe I, C o S.' }
+            '1' { return 'Install' }
+            '2' { return 'Prepare' }
+            '3' { return 'Check' }
+            '0' { return 'Stop' }
+            default { Write-Warning 'Respuesta no válida. Escribe 1, 2, 3 o 0.' }
         }
     }
+}
+
+function Confirm-PreparationChoice {
+    param([string]$Description)
+
+    while ($true) {
+        $confirmation = (Read-Host "Elegiste: $Description. ¿Confirmas? [S/n]").Trim().ToUpperInvariant()
+        switch ($confirmation) {
+            '' { return $true }
+            'S' { return $true }
+            'N' { return $false }
+            default { Write-Warning 'Respuesta no válida. Escribe S o N.' }
+        }
+    }
+}
+
+function Test-Prerequisites {
+    $isReady = $true
+    foreach ($tool in @('volta', 'uv', 'docker')) {
+        if (Test-Command $tool) {
+            Write-Host "${tool}: OK"
+        } else {
+            Write-Host "${tool}: falta"
+            $isReady = $false
+        }
+    }
+
+    if (Test-Command 'docker') {
+        docker compose version *> $null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host 'docker compose: OK'
+        } else {
+            Write-Host 'docker compose: falta'
+            $isReady = $false
+        }
+
+        docker info *> $null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host 'motor Docker: OK'
+        } else {
+            Write-Host 'motor Docker: no disponible'
+            $isReady = $false
+        }
+    }
+
+    if ($isReady) { Write-Host 'Dependencias: OK.' }
+    return $isReady
 }
 
 if ($InstallPrerequisites -and $SkipPrerequisiteInstallation) {
@@ -114,10 +163,23 @@ if ($InstallPrerequisites -and $SkipPrerequisiteInstallation) {
 
 if ($InstallPrerequisites) {
     $preparationChoice = 'Install'
+    $choiceDescription = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
 } elseif ($SkipPrerequisiteInstallation) {
-    $preparationChoice = 'Continue'
+    $preparationChoice = 'Prepare'
+    $choiceDescription = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuración del usuario'
 } else {
     $preparationChoice = Get-PreparationChoice
+    $choiceDescription = @{
+        'Install' = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
+        'Prepare' = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuración del usuario'
+        'Check' = 'comprobar las dependencias sin preparar el proyecto'
+        'Stop' = 'salir sin modificar el equipo'
+    }[$preparationChoice]
+}
+
+if (-not (Confirm-PreparationChoice $choiceDescription)) {
+    Write-Host 'No se realizó ninguna acción.'
+    exit 0
 }
 
 switch ($preparationChoice) {
@@ -129,7 +191,11 @@ switch ($preparationChoice) {
         Write-Host 'Se instalaron herramientas faltantes; el script continuará con la preparación de Modulo.'
     }
     }
-    'Continue' { Write-Host 'Se usarán las herramientas disponibles sin modificar la configuración del usuario.' }
+    'Prepare' { Write-Host 'Se usarán las herramientas disponibles sin modificar la configuración del usuario.' }
+    'Check' {
+        if (-not (Test-Prerequisites)) { exit 1 }
+        exit 0
+    }
     'Stop' { Write-Host 'Preparación cancelada.'; exit 0 }
 }
 
