@@ -93,15 +93,21 @@ Las versiones actuales de Docker Desktop y el plugin incluyen Compose como `dock
 
 ### Preparador de Windows (`scripts/setup.ps1`)
 
-El script puede preparar el proyecto después de instalar las herramientas. Hay dos modos:
-
-**Modo normal (recomendado si ya tienes los prerrequisitos):**
+El script es la forma recomendada de preparar Modulo en Windows. Tras clonar, ejecútalo desde la raíz:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-Este modo:
+Al iniciarse, el script muestra estas opciones en la terminal:
+
+- `I`: instala solo los prerrequisitos que falten y configura Volta/uv para el usuario actual.
+- `C`: continúa solo con las herramientas que ya están disponibles, sin cambiar el `PATH` ni las variables de entorno del usuario.
+- `S`: sale sin preparar el proyecto ni modificar el equipo.
+
+Es seguro ejecutarlo de nuevo en el mismo clon o en otro clon: reutiliza las herramientas y las cachés existentes, no actualiza herramientas ya presentes, no sobrescribe `backend/.env`, no modifica los lockfiles y aplica solamente las migraciones pendientes.
+
+En cada ejecución:
 
 1. Comprueba Volta, uv, Docker y `docker compose`, y confirma que el motor Docker esté iniciado.
 2. Crea `backend/.env` copiando `.env.example` solo si todavía no existe.
@@ -109,21 +115,23 @@ Este modo:
 4. Lee los pines `volta` de `frontend/package.json`, ejecuta `volta fetch` para descargar Node.js/npm en la caché de Volta y valida las versiones activas.
 5. Ejecuta `npm ci`, inicia PostgreSQL con `docker compose -f infra/compose.yaml up -d --wait`, aplica migraciones y ejecuta `manage.py check`.
 
-**Instalación opcional de prerrequisitos:**
+`-InstallPrerequisites` evita la pregunta inicial y selecciona `I` automáticamente:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -InstallPrerequisites
 ```
 
-Este modo hace primero lo anterior, pero antes comprueba si faltan `volta`, `uv` o `docker`. Para cada herramienta ausente usa WinGet con estos identificadores: `Volta.Volta`, `astral-sh.uv` y `Docker.DockerDesktop`. No actualiza ni desinstala una herramienta que ya esté presente. Docker Desktop puede requerir aceptar su configuración inicial, habilitar WSL 2/virtualización e iniciarse manualmente.
+Antes de preparar el proyecto, el script comprueba si faltan `volta`, `uv` o `docker`. Para cada herramienta ausente usa WinGet con estos identificadores: `Volta.Volta`, `astral-sh.uv` y `Docker.DockerDesktop`. No actualiza ni desinstala una herramienta que ya esté presente. También añade al proceso actual las rutas conocidas de las herramientas recién instaladas, por lo que continúa automáticamente con uv, Volta y Compose cuando estén disponibles.
 
-El parámetro también configura el usuario actual: coloca los shims de Volta (`%LOCALAPPDATA%\Volta\bin`) al principio del `PATH` de usuario y guarda `UV_MANAGED_PYTHON=true`. En terminales nuevas, Volta tendrá prioridad sobre un Node.js independiente, nvm o fnm; fuera de un proyecto con pines, usará el Node predeterminado de Volta. Los runtimes anteriores no se eliminan, pero pueden quedar ocultos por ese orden de `PATH`. Si otros proyectos dependen de nvm/fnm o de otro Node, usa el modo normal sin `-InstallPrerequisites` o revisa el `PATH` antes de continuar.
+La opción `I` y `-InstallPrerequisites` configuran el usuario actual: colocan los shims de Volta (`%LOCALAPPDATA%\Volta\bin`) al principio del `PATH` de usuario y guardan `UV_MANAGED_PYTHON=true`. En terminales nuevas, Volta tendrá prioridad sobre un Node.js independiente, nvm o fnm; fuera de un proyecto con pines, usará el Node predeterminado de Volta. Los runtimes anteriores no se eliminan, pero pueden quedar ocultos por ese orden de `PATH`. Si otros proyectos dependen de nvm/fnm o de otro Node, elige `C` o usa `-SkipPrerequisiteInstallation` después de haber comprobado que Volta, uv y Docker ya están disponibles.
 
-Cuando WinGet instala al menos una herramienta, el script termina después de la instalación porque la terminal actual todavía conserva su `PATH` anterior. En ese caso:
+El script no inicia aplicaciones de escritorio. Si Docker Desktop se instaló ahora, ábrelo tú mismo, acepta sus términos y completa la configuración de WSL 2, virtualización o reinicio si Docker lo solicita. Cuando `docker info` funcione, vuelve a ejecutar el mismo comando.
 
-1. Cierra PowerShell y abre una terminal nueva.
-2. Inicia Docker Desktop y espera a que `docker info` funcione.
-3. Regresa a la raíz de Modulo y ejecuta el modo normal, sin `-InstallPrerequisites`.
+Si las herramientas ya están instaladas y necesitas preparar el clon sin instalar nada ni modificar el `PATH` o las variables de entorno del usuario, usa:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -SkipPrerequisiteInstallation
+```
 
 Para comprobar qué quedó configurado:
 

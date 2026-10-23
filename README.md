@@ -12,7 +12,7 @@ La [Biblia del proyecto](PROJECT_BIBLE.md) define el producto, las reglas de neg
 | Backend | Python 3.12, Django 5.2 LTS, Django REST Framework 3.18 | [uv](https://docs.astral.sh/uv/) y `backend/.python-version` |
 | Base de datos | PostgreSQL 17 | [Docker](https://docs.docker.com/get-docker/) y Docker Compose |
 
-También se necesita [Git](https://git-scm.com/). **Instala Volta, uv y Docker con Compose antes de preparar el repositorio, y asegúrate de que Docker esté ejecutándose.** Consulta la [guía de instalación de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para Windows, macOS y Linux, actualizaciones, instalaciones coexistentes y conflictos de puertos. No es necesario instalar Python, Node.js, npm o PostgreSQL manualmente: uv y Volta gestionan los runtimes del proyecto y Compose ejecuta la base de datos.
+También se necesita [Git](https://git-scm.com/). En Windows, el preparador instala Volta, uv y Docker Desktop si faltan; consulta la [guía de instalación de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para macOS, Linux, actualizaciones, instalaciones coexistentes y conflictos de puertos. No es necesario instalar Python, Node.js, npm o PostgreSQL manualmente: uv y Volta gestionan los runtimes del proyecto y Compose ejecuta la base de datos.
 
 Las versiones de runtime se declaran en `frontend/package.json` y `backend/.python-version`; las dependencias se reproducen con `frontend/package-lock.json` y `backend/uv.lock`. No las sustituyas por versiones globales.
 
@@ -72,7 +72,7 @@ cd ..
 
 ### Preparación automatizada con PowerShell
 
-Como alternativa a los pasos anteriores, desde la raíz del repositorio y con Docker iniciado:
+En Windows, esta es la preparación recomendada después de clonar. En la terminal, elige si quieres instalar las herramientas faltantes o continuar solo con las ya instaladas; después prepara las dependencias bloqueadas, crea la configuración local que falte y deja el proyecto listo:
 
 En Windows (PowerShell):
 
@@ -82,7 +82,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 
 También funciona con `pwsh -NoProfile -File ./scripts/setup.ps1` donde esté disponible PowerShell 7.
 
-El script sincroniza dependencias, copia el `.env` si no existe, inicia PostgreSQL y aplica las migraciones sin sobrescribir configuración local. En Windows, `-InstallPrerequisites` instala únicamente las herramientas faltantes mediante WinGet, prioriza Volta en el `PATH` del usuario y configura uv para usar Python administrado; consulta la [guía de instalación](docs/INSTALACION_HERRAMIENTAS.md) antes de usarlo.
+El script es seguro de repetir tras un nuevo clon o al volver al proyecto: no actualiza herramientas que ya existen, no sobrescribe `.env`, no modifica los lockfiles y aplica migraciones pendientes. `-InstallPrerequisites` selecciona sin preguntar la instalación de herramientas faltantes; consulta las opciones, el impacto de Volta y el requisito de iniciar Docker Desktop manualmente en la [guía de instalación](docs/INSTALACION_HERRAMIENTAS.md).
 
 ## Ejecutar en desarrollo
 

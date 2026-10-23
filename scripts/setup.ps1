@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [switch]$InstallPrerequisites
+    [switch]$InstallPrerequisites,
+    [switch]$SkipPrerequisiteInstallation
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,6 +50,24 @@ function Configure-ManagedToolchains {
     Write-Host 'Volta queda al inicio del PATH de usuario y uv usará Python administrado por uv en nuevas terminales.'
 }
 
+function Add-ProcessPathEntry {
+    param([string]$Entry)
+
+    if (-not (Test-Path $Entry)) { return }
+    $normalizedEntry = $Entry.TrimEnd('\')
+    $processEntries = @($env:Path -split ';' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if (-not ($processEntries | Where-Object { $_.TrimEnd('\').Equals($normalizedEntry, [StringComparison]::OrdinalIgnoreCase) })) {
+        $env:Path = "$normalizedEntry;$env:Path"
+    }
+}
+
+function Refresh-ProcessToolPath {
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links')
+    Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Volta')
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Volta\bin')
+    Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+}
+
 function Install-MissingPrerequisites {
     $packages = @(
         @{ Command = 'volta'; Id = 'Volta.Volta'; Name = 'Volta' },
@@ -72,13 +91,46 @@ function Install-MissingPrerequisites {
     return $true
 }
 
+function Get-PreparationChoice {
+    while ($true) {
+        Write-Host ''
+        Write-Host 'Preparación de herramientas:'
+        Write-Host '  [I] Instalar las herramientas faltantes y configurar Volta/uv para el usuario actual'
+        Write-Host '  [C] Continuar solo con las herramientas ya instaladas'
+        Write-Host '  [S] Salir sin modificar el equipo'
+        $choice = (Read-Host 'Elige I, C o S').Trim().ToUpperInvariant()
+        switch ($choice) {
+            'I' { return 'Install' }
+            'C' { return 'Continue' }
+            'S' { return 'Stop' }
+            default { Write-Warning 'Respuesta no válida. Escribe I, C o S.' }
+        }
+    }
+}
+
+if ($InstallPrerequisites -and $SkipPrerequisiteInstallation) {
+    throw 'No se pueden usar -InstallPrerequisites y -SkipPrerequisiteInstallation al mismo tiempo.'
+}
+
 if ($InstallPrerequisites) {
+    $preparationChoice = 'Install'
+} elseif ($SkipPrerequisiteInstallation) {
+    $preparationChoice = 'Continue'
+} else {
+    $preparationChoice = Get-PreparationChoice
+}
+
+switch ($preparationChoice) {
+    'Install' {
     $installedPrerequisites = Install-MissingPrerequisites
     Configure-ManagedToolchains
+    Refresh-ProcessToolPath
     if ($installedPrerequisites) {
-        Write-Host 'Se instalaron herramientas. Abre una terminal nueva, inicia Docker Desktop si se instaló y vuelve a ejecutar este script sin parámetros.'
-        exit 0
+        Write-Host 'Se instalaron herramientas faltantes; el script continuará con la preparación de Modulo.'
     }
+    }
+    'Continue' { Write-Host 'Se usarán las herramientas disponibles sin modificar la configuración del usuario.' }
+    'Stop' { Write-Host 'Preparación cancelada.'; exit 0 }
 }
 
 Require-Command 'volta' 'Instala Volta: https://volta.sh/'
@@ -87,8 +139,9 @@ Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/ge
 
 docker compose version
 if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no está disponible.' }
+
 docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw 'Docker está instalado, pero el motor no está disponible. Inicia Docker Desktop o el servicio Docker y vuelve a intentarlo.' }
+if ($LASTEXITCODE -ne 0) { throw 'Docker está instalado, pero el motor no está disponible. Inicia Docker Desktop o el servicio Docker y vuelve a ejecutar el script.' }
 
 $envFile = Join-Path $backendPath '.env'
 if (-not (Test-Path $envFile)) {
