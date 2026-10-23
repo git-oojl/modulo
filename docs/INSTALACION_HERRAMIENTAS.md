@@ -91,13 +91,51 @@ La configuración de desarrollo está en `infra/compose.yaml`. Compose inicia ú
 
 Las versiones actuales de Docker Desktop y el plugin incluyen Compose como `docker compose`. No instales el binario heredado `docker-compose` si `docker compose version` ya funciona. Si ya tienes Docker Engine o Docker Desktop, consérvalo y verifica que el daemon esté encendido con `docker info`.
 
-En Windows, el preparador opcional de este repositorio puede solicitar la instalación de los clientes faltantes mediante WinGet; Docker Desktop aún puede requerir que aceptes su configuración inicial y lo inicies:
+### Preparador de Windows (`scripts/setup.ps1`)
+
+El script puede preparar el proyecto después de instalar las herramientas. Hay dos modos:
+
+**Modo normal (recomendado si ya tienes los prerrequisitos):**
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
+Este modo:
+
+1. Comprueba Volta, uv, Docker y `docker compose`, y confirma que el motor Docker esté iniciado.
+2. Crea `backend/.env` copiando `.env.example` solo si todavía no existe.
+3. Lee `backend/.python-version`, instala esa versión con uv y ejecuta `uv sync --frozen` con ella.
+4. Lee los pines `volta` de `frontend/package.json`, ejecuta `volta fetch` para descargar Node.js/npm en la caché de Volta y valida las versiones activas.
+5. Ejecuta `npm ci`, inicia PostgreSQL con `docker compose -f infra/compose.yaml up -d --wait`, aplica migraciones y ejecuta `manage.py check`.
+
+**Instalación opcional de prerrequisitos:**
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -InstallPrerequisites
 ```
 
-Además, el parámetro configura el usuario actual para que los shims de Volta queden primero en `PATH` y establece `UV_MANAGED_PYTHON=true`. Así, las terminales nuevas prefieren Volta para Node.js/npm y uv descarga el Python declarado por el proyecto. En la preparación, el script ejecuta `volta fetch` con las versiones de `frontend/package.json`: las descarga en la caché de Volta sin cambiar el runtime predeterminado para otros proyectos. No desinstala Node.js, Python, nvm/fnm ni otros gestores: permanecen disponibles si se invocan con su ruta o se cambia el `PATH`. Después de que WinGet instale algo, abre otra terminal y ejecútalo de nuevo sin parámetros.
+Este modo hace primero lo anterior, pero antes comprueba si faltan `volta`, `uv` o `docker`. Para cada herramienta ausente usa WinGet con estos identificadores: `Volta.Volta`, `astral-sh.uv` y `Docker.DockerDesktop`. No actualiza ni desinstala una herramienta que ya esté presente. Docker Desktop puede requerir aceptar su configuración inicial, habilitar WSL 2/virtualización e iniciarse manualmente.
+
+El parámetro también configura el usuario actual: coloca los shims de Volta (`%LOCALAPPDATA%\Volta\bin`) al principio del `PATH` de usuario y guarda `UV_MANAGED_PYTHON=true`. En terminales nuevas, Volta tendrá prioridad sobre un Node.js independiente, nvm o fnm; fuera de un proyecto con pines, usará el Node predeterminado de Volta. Los runtimes anteriores no se eliminan, pero pueden quedar ocultos por ese orden de `PATH`. Si otros proyectos dependen de nvm/fnm o de otro Node, usa el modo normal sin `-InstallPrerequisites` o revisa el `PATH` antes de continuar.
+
+Cuando WinGet instala al menos una herramienta, el script termina después de la instalación porque la terminal actual todavía conserva su `PATH` anterior. En ese caso:
+
+1. Cierra PowerShell y abre una terminal nueva.
+2. Inicia Docker Desktop y espera a que `docker info` funcione.
+3. Regresa a la raíz de Modulo y ejecuta el modo normal, sin `-InstallPrerequisites`.
+
+Para comprobar qué quedó configurado:
+
+```powershell
+Get-Command volta, uv, node, npm, docker
+volta which node
+volta which npm
+[Environment]::GetEnvironmentVariable('UV_MANAGED_PYTHON', 'User')
+[Environment]::GetEnvironmentVariable('Path', 'User') -split ';' | Select-Object -First 5
+```
+
+El script no modifica `package.json`, `package-lock.json`, `pyproject.toml`, `uv.lock` ni `infra/compose.yaml`; tampoco sobrescribe `.env` ni borra volúmenes Docker. Para dejar de preferir uv administrado, elimina `UV_MANAGED_PYTHON` de las variables de entorno del usuario. Para dejar de priorizar Volta, quita `%LOCALAPPDATA%\Volta\bin` del `PATH` de usuario desde la configuración de Windows; no es necesario desinstalar Volta.
 
 ### PostgreSQL existente y conflictos de puerto
 
