@@ -23,7 +23,23 @@ git clone <URL_DEL_REPOSITORIO> modulo
 cd modulo
 ```
 
-### 1. Configurar el entorno del backend
+### Windows: preparacion recomendada
+
+En Windows, prepara un clon nuevo con el script del repositorio:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
+Elige `[1]` si ya tienes Volta, uv y Docker listos; elige `[2]` si falta alguna herramienta y quieres que el script la instale mediante WinGet. El script crea `backend/.env` si falta, instala los runtimes declarados, sincroniza los lockfiles, levanta PostgreSQL y aplica las migraciones. La opción `[3]` solo revisa el estado del equipo y del proyecto.
+
+Puedes ejecutarlo de nuevo en cualquier clon: no sobrescribe `.env`, no modifica los lockfiles y aplica las migraciones pendientes. Docker Desktop debe estar iniciado antes de usar `[1]`. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles de cada opción, incluida la configuración inicial de Docker Desktop.
+
+### Preparacion manual
+
+Usa esta ruta en macOS, Linux o si prefieres ejecutar cada paso por separado.
+
+#### 1. Configurar el entorno del backend
 
 Copia las variables de desarrollo:
 
@@ -35,7 +51,7 @@ En PowerShell utiliza `Copy-Item backend/.env.example backend/.env`.
 
 `backend/.env` contiene valores exclusivamente locales y no se versiona. Los comandos Django de esta guía lo cargan con **`uv run --env-file .env`**. En otros entornos, proporciona esas variables mediante el mecanismo de configuración correspondiente.
 
-### 2. Levantar PostgreSQL
+#### 2. Levantar PostgreSQL
 
 Desde la raíz del repositorio:
 
@@ -45,7 +61,7 @@ docker compose -f infra/compose.yaml up -d --wait
 
 Compose inicia PostgreSQL 17 en `127.0.0.1:5432`, usando una base y credenciales **solo de desarrollo** que corresponden a `backend/.env.example`. Los datos se conservan en un volumen Docker, incluso al detener el contenedor. Si el puerto `5432` está ocupado, cambia el puerto publicado en `infra/compose.yaml` y `POSTGRES_PORT` en `backend/.env`.
 
-### 3. Instalar dependencias y migrar
+#### 3. Instalar dependencias y migrar
 
 Backend:
 
@@ -69,20 +85,6 @@ cd ..
 ```
 
 **Ejecuta npm dentro de `frontend/`**: desde ese directorio, Volta aplica automáticamente las versiones fijadas en `package.json`. `npm ci` utiliza `package-lock.json` sin resolver versiones nuevas.
-
-### Preparación automatizada con PowerShell
-
-En Windows, esta es la preparación recomendada después de clonar. En la terminal, elige si quieres instalar las herramientas faltantes o continuar solo con las ya instaladas; después prepara las dependencias bloqueadas, crea la configuración local que falte y deja el proyecto listo:
-
-En Windows (PowerShell):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
-```
-
-También funciona con `pwsh -NoProfile -File ./scripts/setup.ps1` donde esté disponible PowerShell 7.
-
-El script es seguro de repetir tras un nuevo clon o al volver al proyecto: no actualiza herramientas que ya existen, no sobrescribe `.env`, no modifica los lockfiles y aplica migraciones pendientes. `-InstallPrerequisites` selecciona sin preguntar la instalación de herramientas faltantes; consulta las opciones, el impacto de Volta y el requisito de iniciar Docker Desktop manualmente en la [guía de instalación](docs/INSTALACION_HERRAMIENTAS.md).
 
 ## Ejecutar en desarrollo
 

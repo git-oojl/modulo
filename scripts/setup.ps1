@@ -5,8 +5,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-# uv and other native commands can write normal status text to stderr.
-# Their exit codes are checked explicitly below.
+# uv y otros comandos nativos pueden escribir estado normal en stderr.
+# Sus codigos de salida se comprueban de forma explicita abajo.
 $PSNativeCommandUseErrorActionPreference = $false
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $frontendPath = Join-Path $repositoryRoot 'frontend'
@@ -144,13 +144,13 @@ function Write-ReadinessResult {
     return $Ready
 }
 
-function Test-UvEnvironment {
-    param([string]$PythonVersion)
+function Invoke-UvReadOnly {
+    param([string]$Arguments)
 
     $uvExecutable = (Get-Command uv -ErrorAction Stop).Source
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $uvExecutable
-    $startInfo.Arguments = "sync --frozen --check --python $PythonVersion"
+    $startInfo.Arguments = $Arguments
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
@@ -158,10 +158,20 @@ function Test-UvEnvironment {
     $process = [System.Diagnostics.Process]::new()
     $process.StartInfo = $startInfo
     [void]$process.Start()
-    [void]$process.StandardOutput.ReadToEnd()
-    [void]$process.StandardError.ReadToEnd()
+    $standardOutput = $process.StandardOutput.ReadToEnd()
+    $standardError = $process.StandardError.ReadToEnd()
     $process.WaitForExit()
-    return $process.ExitCode -eq 0
+    return [PSCustomObject]@{
+        ExitCode = $process.ExitCode
+        Output = "$standardOutput`n$standardError"
+    }
+}
+
+function Test-UvEnvironment {
+    param([string]$PythonVersion)
+
+    $result = Invoke-UvReadOnly "sync --frozen --check --python $PythonVersion"
+    return $result.ExitCode -eq 0
 }
 
 function Test-ModuloReadiness {
@@ -334,13 +344,13 @@ function Test-ModuloReadiness {
     if ($backendReady -and $envReady -and $databaseReady) {
         Push-Location $backendPath
         try {
-            $migrationPlan = (& uv run --frozen --no-sync --env-file .env python manage.py showmigrations --plan 2>&1)
-            $migrationsReady = $LASTEXITCODE -eq 0 -and -not ($migrationPlan -match '\[ \]')
+            $migrationResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py showmigrations --plan'
+            $migrationsReady = $migrationResult.ExitCode -eq 0 -and -not ($migrationResult.Output -match '\[ \]')
             Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [1] para aplicar las migraciones pendientes.' | Out-Null
             if (-not $migrationsReady) { $isReady = $false }
 
-            uv run --frozen --no-sync --env-file .env python manage.py check *> $null
-            $djangoReady = $LASTEXITCODE -eq 0
+            $djangoResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py check'
+            $djangoReady = $djangoResult.ExitCode -eq 0
             Write-ReadinessResult $djangoReady 'Validacion Django' 'manage.py check termino correctamente' 'Revisa la salida de: uv run --frozen --env-file .env python manage.py check' | Out-Null
             if (-not $djangoReady) { $isReady = $false }
         } finally {
@@ -437,18 +447,20 @@ try {
 
 Push-Location $frontendPath
 try {
-    # Volta lee las versiones fijadas en frontend/package.json al invocar node/npm.
+    # Volta ejecuta las versiones fijadas en frontend/package.json sin depender del orden de PATH.
     $package = Get-Content (Join-Path $frontendPath 'package.json') -Raw | ConvertFrom-Json
     $expectedNode = "v$($package.volta.node)"
     $expectedNpm = $package.volta.npm
     volta fetch "node@$($package.volta.node)" "npm@$expectedNpm"
     if ($LASTEXITCODE -ne 0) { throw 'Volta no pudo descargar las versiones declaradas de Node.js y npm.' }
-    $nodeVersion = (node --version).Trim()
-    $npmVersion = (npm --version).Trim()
+    $nodeVersion = (volta run --node $package.volta.node --npm $expectedNpm -- node --version).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Volta no pudo ejecutar la version declarada de Node.js.' }
+    $npmVersion = (volta run --node $package.volta.node --npm $expectedNpm -- npm --version).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Volta no pudo ejecutar la version declarada de npm.' }
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
-        throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json. Revisa las herramientas y el PATH."
+        throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json."
     }
-    npm ci
+    volta run --node $package.volta.node --npm $expectedNpm -- npm ci
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
 } finally {
     Pop-Location

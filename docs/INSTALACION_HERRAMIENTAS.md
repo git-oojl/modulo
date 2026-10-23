@@ -1,8 +1,20 @@
 # Instalación de herramientas
 
-Esta guía prepara las tres herramientas que usa Modulo: [uv](https://docs.astral.sh/uv/) para Python, [Volta](https://docs.volta.sh/) para Node.js y npm, y [Docker Compose](https://docs.docker.com/compose/) para PostgreSQL. Instálalas una vez por equipo, abre una terminal nueva y vuelve a este repositorio.
+Esta guía prepara las tres herramientas que usa Modulo: [uv](https://docs.astral.sh/uv/) para Python, [Volta](https://docs.volta.sh/) para Node.js y npm, y [Docker Compose](https://docs.docker.com/compose/) para PostgreSQL. En Windows, el script del repositorio instala las que falten y prepara el clon; las instrucciones manuales permanecen aquí para otros sistemas y casos de diagnóstico.
 
 No instales Python, Node.js, npm ni PostgreSQL manualmente solo para Modulo. Si ya los tienes para otros proyectos, pueden coexistir: esta guía prioriza los gestores del proyecto y no pide desinstalar nada salvo que haya un conflicto real de `PATH` o de puertos.
+
+## Windows: metodo recomendado
+
+Después de clonar el repositorio, ejecuta desde su raíz:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
+Elige `[1]` para preparar un clon con las herramientas ya instaladas. Elige `[2]` para instalar las herramientas que falten con WinGet y configurar Volta/uv para el usuario actual antes de preparar el clon. Elige `[3]` para revisar el estado sin modificar nada. La sección [Preparador de Windows](#preparador-de-windows-scriptssetupps1) detalla cada opción.
+
+La instalación inicial de Docker Desktop puede pedir que aceptes sus términos o completes WSL 2/virtualización. Ábrelo y termina esa configuración antes de volver a ejecutar el script. En macOS, Linux y Windows con una preparación manual preferida, sigue las secciones específicas de esta guía y la ruta manual del [README principal](../README.md).
 
 ## Comprobar antes de instalar
 
@@ -93,7 +105,7 @@ Las versiones actuales de Docker Desktop y el plugin incluyen Compose como `dock
 
 ### Preparador de Windows (`scripts/setup.ps1`)
 
-El script es la forma recomendada de preparar Modulo en Windows. Tras clonar, ejecútalo desde la raíz:
+El script es el metodo principal para preparar Modulo en Windows. Tras clonar, ejecútalo desde la raíz:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
