@@ -95,14 +95,14 @@ function Get-PreparationChoice {
     while ($true) {
         Write-Host ''
         Write-Host 'Preparacion de herramientas:'
-        Write-Host '  [1] Instalar las herramientas faltantes y configurar Volta/uv para este usuario'
-        Write-Host '  [2] Preparar Modulo con las herramientas ya instaladas, sin cambiar la configuracion del usuario'
-        Write-Host '  [3] Comprobar unicamente las dependencias instaladas, sin preparar el proyecto'
+        Write-Host '  [1] Preparar entorno de Modulo'
+        Write-Host '  [2] Instalar herramientas faltantes y configurar Volta/uv para este usuario'
+        Write-Host '  [3] Comprobar dependencias instaladas'
         Write-Host '  [0] Salir sin modificar el equipo'
         $choice = (Read-Host 'Elige 1, 2, 3 o 0').Trim()
         switch ($choice) {
-            '1' { return 'Install' }
-            '2' { return 'Prepare' }
+            '1' { return 'Prepare' }
+            '2' { return 'Install' }
             '3' { return 'Check' }
             '0' { return 'Stop' }
             default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3 o 0.' }
@@ -169,12 +169,22 @@ if ($InstallPrerequisites) {
     $choiceDescription = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuracion del usuario'
 } else {
     $preparationChoice = Get-PreparationChoice
-    $choiceDescription = @{
-        'Install' = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
-        'Prepare' = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuracion del usuario'
-        'Check' = 'comprobar las dependencias sin preparar el proyecto'
-        'Stop' = 'salir sin modificar el equipo'
-    }[$preparationChoice]
+}
+
+if ($preparationChoice -eq 'Check') {
+    if (-not (Test-Prerequisites)) { exit 1 }
+    exit 0
+}
+
+if ($preparationChoice -eq 'Stop') {
+    Write-Host 'Preparacion cancelada.'
+    exit 0
+}
+
+$choiceDescription = if ($preparationChoice -eq 'Install') {
+    'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
+} else {
+    'preparar el entorno de Modulo con las herramientas instaladas'
 }
 
 if (-not (Confirm-PreparationChoice $choiceDescription)) {
@@ -192,11 +202,6 @@ switch ($preparationChoice) {
     }
     }
     'Prepare' { Write-Host 'Se usaran las herramientas disponibles sin modificar la configuracion del usuario.' }
-    'Check' {
-        if (-not (Test-Prerequisites)) { exit 1 }
-        exit 0
-    }
-    'Stop' { Write-Host 'Preparacion cancelada.'; exit 0 }
 }
 
 Require-Command 'volta' 'Instala Volta: https://volta.sh/'
