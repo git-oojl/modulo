@@ -18,7 +18,7 @@ function Test-Command {
 function Require-Command {
     param([string]$Name, [string]$Hint)
     if (-not (Test-Command $Name)) {
-        throw "$Name no está disponible. $Hint"
+        throw "$Name no esta disponible. $Hint"
     }
 }
 
@@ -26,7 +26,7 @@ function Add-UserPathEntry {
     param([string]$Entry)
 
     if (-not (Test-Path $Entry)) {
-        Write-Warning "No se encontró $Entry; no se modificó PATH."
+        Write-Warning "No se encontro $Entry; no se modifico PATH."
         return
     }
 
@@ -47,7 +47,7 @@ function Configure-ManagedToolchains {
     Add-UserPathEntry $voltaBin
     [Environment]::SetEnvironmentVariable('UV_MANAGED_PYTHON', 'true', 'User')
     $env:UV_MANAGED_PYTHON = 'true'
-    Write-Host 'Volta queda al inicio del PATH de usuario y uv usará Python administrado por uv en nuevas terminales.'
+    Write-Host 'Volta queda al inicio del PATH de usuario y uv usara Python administrado por uv en nuevas terminales.'
 }
 
 function Add-ProcessPathEntry {
@@ -77,7 +77,7 @@ function Install-MissingPrerequisites {
 
     $missing = @($packages | Where-Object { -not (Test-Command $_.Command) })
     if ($missing.Count -eq 0) {
-        Write-Host 'Volta, uv y Docker ya están disponibles; no se instalará ni actualizará nada.'
+        Write-Host 'Volta, uv y Docker ya estan disponibles; no se instalara ni actualizara nada.'
         return $false
     }
 
@@ -94,10 +94,10 @@ function Install-MissingPrerequisites {
 function Get-PreparationChoice {
     while ($true) {
         Write-Host ''
-        Write-Host 'Preparación de herramientas:'
+        Write-Host 'Preparacion de herramientas:'
         Write-Host '  [1] Instalar las herramientas faltantes y configurar Volta/uv para este usuario'
-        Write-Host '  [2] Preparar Modulo con las herramientas ya instaladas, sin cambiar la configuración del usuario'
-        Write-Host '  [3] Comprobar únicamente las dependencias instaladas, sin preparar el proyecto'
+        Write-Host '  [2] Preparar Modulo con las herramientas ya instaladas, sin cambiar la configuracion del usuario'
+        Write-Host '  [3] Comprobar unicamente las dependencias instaladas, sin preparar el proyecto'
         Write-Host '  [0] Salir sin modificar el equipo'
         $choice = (Read-Host 'Elige 1, 2, 3 o 0').Trim()
         switch ($choice) {
@@ -105,7 +105,7 @@ function Get-PreparationChoice {
             '2' { return 'Prepare' }
             '3' { return 'Check' }
             '0' { return 'Stop' }
-            default { Write-Warning 'Respuesta no válida. Escribe 1, 2, 3 o 0.' }
+            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3 o 0.' }
         }
     }
 }
@@ -114,12 +114,12 @@ function Confirm-PreparationChoice {
     param([string]$Description)
 
     while ($true) {
-        $confirmation = (Read-Host "Elegiste: $Description. ¿Confirmas? [S/n]").Trim().ToUpperInvariant()
+        $confirmation = (Read-Host "Elegiste: $Description. Confirmas? [S/n]").Trim().ToUpperInvariant()
         switch ($confirmation) {
             '' { return $true }
             'S' { return $true }
             'N' { return $false }
-            default { Write-Warning 'Respuesta no válida. Escribe S o N.' }
+            default { Write-Warning 'Respuesta no valida. Escribe S o N.' }
         }
     }
 }
@@ -166,19 +166,19 @@ if ($InstallPrerequisites) {
     $choiceDescription = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
 } elseif ($SkipPrerequisiteInstallation) {
     $preparationChoice = 'Prepare'
-    $choiceDescription = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuración del usuario'
+    $choiceDescription = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuracion del usuario'
 } else {
     $preparationChoice = Get-PreparationChoice
     $choiceDescription = @{
         'Install' = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
-        'Prepare' = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuración del usuario'
+        'Prepare' = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuracion del usuario'
         'Check' = 'comprobar las dependencias sin preparar el proyecto'
         'Stop' = 'salir sin modificar el equipo'
     }[$preparationChoice]
 }
 
 if (-not (Confirm-PreparationChoice $choiceDescription)) {
-    Write-Host 'No se realizó ninguna acción.'
+    Write-Host 'No se realizo ninguna accion.'
     exit 0
 }
 
@@ -188,15 +188,15 @@ switch ($preparationChoice) {
     Configure-ManagedToolchains
     Refresh-ProcessToolPath
     if ($installedPrerequisites) {
-        Write-Host 'Se instalaron herramientas faltantes; el script continuará con la preparación de Modulo.'
+        Write-Host 'Se instalaron herramientas faltantes; el script continuara con la preparacion de Modulo.'
     }
     }
-    'Prepare' { Write-Host 'Se usarán las herramientas disponibles sin modificar la configuración del usuario.' }
+    'Prepare' { Write-Host 'Se usaran las herramientas disponibles sin modificar la configuracion del usuario.' }
     'Check' {
         if (-not (Test-Prerequisites)) { exit 1 }
         exit 0
     }
-    'Stop' { Write-Host 'Preparación cancelada.'; exit 0 }
+    'Stop' { Write-Host 'Preparacion cancelada.'; exit 0 }
 }
 
 Require-Command 'volta' 'Instala Volta: https://volta.sh/'
@@ -204,10 +204,10 @@ Require-Command 'uv' 'Instala uv: https://docs.astral.sh/uv/'
 Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/get-docker/'
 
 docker compose version
-if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no está disponible.' }
+if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
 
 docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw 'Docker está instalado, pero el motor no está disponible. Inicia Docker Desktop o el servicio Docker y vuelve a ejecutar el script.' }
+if ($LASTEXITCODE -ne 0) { throw 'Docker esta instalado, pero el motor no esta disponible. Inicia Docker Desktop o el servicio Docker y vuelve a ejecutar el script.' }
 
 $envFile = Join-Path $backendPath '.env'
 if (-not (Test-Path $envFile)) {
@@ -218,7 +218,7 @@ if (-not (Test-Path $envFile)) {
 Push-Location $backendPath
 try {
     $pythonVersion = (Get-Content (Join-Path $backendPath '.python-version') -Raw).Trim()
-    if ([string]::IsNullOrWhiteSpace($pythonVersion)) { throw 'backend/.python-version no contiene una versión de Python.' }
+    if ([string]::IsNullOrWhiteSpace($pythonVersion)) { throw 'backend/.python-version no contiene una version de Python.' }
     uv python install $pythonVersion
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar Python con uv.' }
     uv sync --frozen --python $pythonVersion
@@ -238,7 +238,7 @@ try {
     $nodeVersion = (node --version).Trim()
     $npmVersion = (npm --version).Trim()
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
-        throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm según frontend/package.json. Revisa las herramientas y el PATH."
+        throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json. Revisa las herramientas y el PATH."
     }
     npm ci
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
@@ -257,9 +257,9 @@ try {
 Push-Location $backendPath
 try {
     uv run --frozen --env-file .env python manage.py migrate
-    if ($LASTEXITCODE -ne 0) { throw 'Falló la aplicación de migraciones.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Fallo la aplicacion de migraciones.' }
     uv run --frozen --env-file .env python manage.py check
-    if ($LASTEXITCODE -ne 0) { throw 'Falló la validación de Django.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Fallo la validacion de Django.' }
 } finally {
     Pop-Location
 }
