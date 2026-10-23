@@ -124,36 +124,217 @@ function Confirm-PreparationChoice {
     }
 }
 
-function Test-Prerequisites {
+function Write-ReadinessResult {
+    param(
+        [bool]$Ready,
+        [string]$Name,
+        [string]$Detail,
+        [string]$Fix
+    )
+
+    if ($Ready) {
+        Write-Host "[OK] $Name - $Detail"
+    } else {
+        Write-Host "[NO] $Name - $Detail"
+        if ($Fix) { Write-Host "     Solucion: $Fix" }
+    }
+    return $Ready
+}
+
+function Test-ModuloReadiness {
     $isReady = $true
-    foreach ($tool in @('volta', 'uv', 'docker')) {
-        if (Test-Command $tool) {
-            Write-Host "${tool}: OK"
-        } else {
-            Write-Host "${tool}: falta"
-            $isReady = $false
-        }
+    $expectedNode = $null
+    $expectedNpm = $null
+    $pythonVersion = $null
+    $frontendReady = $false
+    $backendReady = $false
+    $databaseReady = $false
+
+    Write-Host ''
+    Write-Host 'Herramientas'
+
+    if (Test-Command 'volta') {
+        $voltaVersion = (& volta --version 2>$null | Out-String).Trim()
+        if (-not (Write-ReadinessResult $true 'Volta' "version $voltaVersion" '')) { $isReady = $false }
+    } else {
+        Write-ReadinessResult $false 'Volta' 'no esta instalado o no esta en PATH' 'Elige [2] para instalarlo.' | Out-Null
+        $isReady = $false
     }
 
-    if (Test-Command 'docker') {
-        docker compose version *> $null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host 'docker compose: OK'
-        } else {
-            Write-Host 'docker compose: falta'
-            $isReady = $false
+    if (Test-Command 'uv') {
+        $uvVersion = (& uv --version 2>$null | Out-String).Trim()
+        Write-ReadinessResult $true 'uv' $uvVersion '' | Out-Null
+    } else {
+        Write-ReadinessResult $false 'uv' 'no esta instalado o no esta en PATH' 'Elige [2] para instalarlo.' | Out-Null
+        $isReady = $false
+    }
+
+    Write-Host ''
+    Write-Host 'Frontend'
+    try {
+        $frontendPackage = Get-Content (Join-Path $frontendPath 'package.json') -Raw | ConvertFrom-Json
+        $expectedNode = "v$($frontendPackage.volta.node)"
+        $expectedNpm = "$($frontendPackage.volta.npm)"
+        Write-ReadinessResult $true 'Pines de frontend' "Node $expectedNode, npm $expectedNpm" '' | Out-Null
+    } catch {
+        Write-ReadinessResult $false 'frontend/package.json' 'no se pudo leer los pines de Volta' 'Restaura frontend/package.json desde Git.' | Out-Null
+        $isReady = $false
+    }
+
+    if ((Test-Command 'volta') -and $expectedNode -and $expectedNpm) {
+        Push-Location $frontendPath
+        try {
+            $nodePath = (& volta which node 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or -not $nodePath) {
+                Write-ReadinessResult $false 'Node de Volta' 'la version fijada por el proyecto no esta descargada' 'Elige [1] para ejecutar volta fetch y npm ci.' | Out-Null
+                $isReady = $false
+            } else {
+                $nodeVersion = (& node --version 2>$null | Out-String).Trim()
+                $nodeReady = $LASTEXITCODE -eq 0 -and $nodeVersion -eq $expectedNode
+                Write-ReadinessResult $nodeReady 'Node de Modulo' "esperado $expectedNode; activo $nodeVersion" 'Revisa el PATH o ejecuta [1].' | Out-Null
+                if (-not $nodeReady) { $isReady = $false }
+            }
+
+            $npmPath = (& volta which npm 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or -not $npmPath) {
+                Write-ReadinessResult $false 'npm de Volta' 'la version fijada por el proyecto no esta descargada' 'Elige [1] para ejecutar volta fetch y npm ci.' | Out-Null
+                $isReady = $false
+            } else {
+                $npmVersion = (& npm --version 2>$null | Out-String).Trim()
+                $npmReady = $LASTEXITCODE -eq 0 -and $npmVersion -eq $expectedNpm
+                Write-ReadinessResult $npmReady 'npm de Modulo' "esperado $expectedNpm; activo $npmVersion" 'Revisa el PATH o ejecuta [1].' | Out-Null
+                if (-not $npmReady) { $isReady = $false }
+            }
+
+            if ((Test-Path (Join-Path $frontendPath 'node_modules')) -and $nodeReady -and $npmReady) {
+                npm ls --depth=0 --ignore-scripts *> $null
+                $frontendReady = $LASTEXITCODE -eq 0
+                Write-ReadinessResult $frontendReady 'Dependencias frontend' 'node_modules coincide con package-lock.json' 'Ejecuta [1] para aplicar npm ci.' | Out-Null
+            } else {
+                Write-ReadinessResult $false 'Dependencias frontend' 'node_modules no esta preparado' 'Ejecuta [1] para aplicar npm ci.' | Out-Null
+                $frontendReady = $false
+            }
+            if (-not $frontendReady) { $isReady = $false }
+        } finally {
+            Pop-Location
         }
+    } else {
+        Write-ReadinessResult $false 'Runtime frontend' 'no se puede validar sin Volta y los pines del proyecto' 'Instala Volta y ejecuta [1].' | Out-Null
+        $isReady = $false
+    }
+
+    Write-Host ''
+    Write-Host 'Backend'
+    $pythonVersionFile = Join-Path $backendPath '.python-version'
+    if (Test-Path $pythonVersionFile) {
+        $pythonVersion = (Get-Content $pythonVersionFile -Raw).Trim()
+        $pythonVersionReady = -not [string]::IsNullOrWhiteSpace($pythonVersion)
+        Write-ReadinessResult $pythonVersionReady 'Python requerido' $pythonVersion 'Restaura backend/.python-version desde Git.' | Out-Null
+        if (-not $pythonVersionReady) { $isReady = $false }
+    } else {
+        Write-ReadinessResult $false 'Python requerido' 'falta backend/.python-version' 'Restaura backend/.python-version desde Git.' | Out-Null
+        $isReady = $false
+    }
+
+    if ((Test-Command 'uv') -and $pythonVersion) {
+        $pythonPath = (& uv python find $pythonVersion 2>$null | Out-String).Trim()
+        $pythonReady = $LASTEXITCODE -eq 0 -and $pythonPath
+        Write-ReadinessResult $pythonReady 'Python de uv' "requerido $pythonVersion" 'Elige [1] para instalar el Python declarado.' | Out-Null
+        if (-not $pythonReady) { $isReady = $false }
+
+        Push-Location $backendPath
+        try {
+            uv sync --frozen --check --python $pythonVersion *> $null
+            $backendReady = $LASTEXITCODE -eq 0
+            $backendDetail = if ($backendReady) { 'uv.lock esta sincronizado con el entorno local' } else { 'falta .venv o no coincide con uv.lock' }
+            Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail 'Elige [1] para ejecutar uv sync --frozen.' | Out-Null
+            if (-not $backendReady) { $isReady = $false }
+        } finally {
+            Pop-Location
+        }
+    } else {
+        Write-ReadinessResult $false 'Entorno backend' 'no se puede validar sin uv y la version de Python requerida' 'Instala uv y ejecuta [1].' | Out-Null
+        $isReady = $false
+    }
+
+    $envFile = Join-Path $backendPath '.env'
+    $envReady = Test-Path $envFile
+    $envDetail = if ($envReady) { 'backend/.env existe' } else { 'falta backend/.env' }
+    Write-ReadinessResult $envReady 'Configuracion backend' $envDetail 'Elige [1] para crear backend/.env desde .env.example.' | Out-Null
+    if (-not $envReady) { $isReady = $false }
+
+    Write-Host ''
+    Write-Host 'Base de datos'
+    if (-not (Test-Command 'docker')) {
+        Write-ReadinessResult $false 'Docker' 'no esta instalado o no esta en PATH' 'Elige [2] para instalar Docker Desktop.' | Out-Null
+        $isReady = $false
+    } else {
+        $dockerVersion = (& docker --version 2>$null | Out-String).Trim()
+        Write-ReadinessResult $true 'Docker' $dockerVersion '' | Out-Null
+
+        docker compose version *> $null
+        $composeReady = $LASTEXITCODE -eq 0
+        Write-ReadinessResult $composeReady 'Docker Compose' 'comando docker compose disponible' 'Actualiza Docker Desktop o instala el plugin de Compose.' | Out-Null
+        if (-not $composeReady) { $isReady = $false }
 
         docker info *> $null
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host 'motor Docker: OK'
-        } else {
-            Write-Host 'motor Docker: no disponible'
-            $isReady = $false
+        $daemonReady = $LASTEXITCODE -eq 0
+        Write-ReadinessResult $daemonReady 'Motor Docker' 'Docker Desktop o Docker Engine responde' 'Inicia Docker Desktop o el servicio Docker.' | Out-Null
+        if (-not $daemonReady) { $isReady = $false }
+
+        if ($composeReady -and $daemonReady) {
+            docker compose -f $composeFile config --quiet *> $null
+            $composeConfigReady = $LASTEXITCODE -eq 0
+            Write-ReadinessResult $composeConfigReady 'Configuracion Compose' 'infra/compose.yaml es valido' 'Revisa infra/compose.yaml.' | Out-Null
+            if (-not $composeConfigReady) { $isReady = $false }
+
+            $dbStatus = (& docker compose -f $composeFile ps db --format json 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or -not $dbStatus) {
+                Write-ReadinessResult $false 'PostgreSQL de Modulo' 'el contenedor no esta creado o no esta ejecutandose' 'Elige [1] para ejecutar docker compose up -d --wait.' | Out-Null
+                $isReady = $false
+            } else {
+                try {
+                    $db = $dbStatus | ConvertFrom-Json
+                    $databaseReady = $db.State -eq 'running' -and $db.Health -eq 'healthy'
+                    $databaseDetail = "estado $($db.State); salud $($db.Health)"
+                    Write-ReadinessResult $databaseReady 'PostgreSQL de Modulo' $databaseDetail 'Elige [1] para iniciar PostgreSQL y espera a que este saludable.' | Out-Null
+                    if (-not $databaseReady) { $isReady = $false }
+                } catch {
+                    Write-ReadinessResult $false 'PostgreSQL de Modulo' 'no se pudo interpretar el estado del contenedor' 'Ejecuta docker compose -f infra/compose.yaml ps.' | Out-Null
+                    $isReady = $false
+                }
+            }
         }
     }
 
-    if ($isReady) { Write-Host 'Dependencias: OK.' }
+    Write-Host ''
+    Write-Host 'Modulo'
+    if ($backendReady -and $envReady -and $databaseReady) {
+        Push-Location $backendPath
+        try {
+            $migrationPlan = (& uv run --frozen --no-sync --env-file .env python manage.py showmigrations --plan 2>&1)
+            $migrationsReady = $LASTEXITCODE -eq 0 -and -not ($migrationPlan -match '\[ \]')
+            Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [1] para aplicar las migraciones pendientes.' | Out-Null
+            if (-not $migrationsReady) { $isReady = $false }
+
+            uv run --frozen --no-sync --env-file .env python manage.py check *> $null
+            $djangoReady = $LASTEXITCODE -eq 0
+            Write-ReadinessResult $djangoReady 'Validacion Django' 'manage.py check termino correctamente' 'Revisa la salida de: uv run --frozen --env-file .env python manage.py check' | Out-Null
+            if (-not $djangoReady) { $isReady = $false }
+        } finally {
+            Pop-Location
+        }
+    } else {
+        Write-ReadinessResult $false 'Validacion de Modulo' 'faltan dependencias del backend, configuracion o PostgreSQL' 'Corrige los elementos marcados como [NO] y ejecuta [1].' | Out-Null
+        $isReady = $false
+    }
+
+    Write-Host ''
+    if ($isReady) {
+        Write-Host '[OK] Modulo esta listo para desarrollar.'
+    } else {
+        Write-Host '[NO] Modulo aun no esta listo. Corrige los elementos marcados y vuelve a ejecutar [3].'
+    }
     return $isReady
 }
 
@@ -172,7 +353,7 @@ if ($InstallPrerequisites) {
 }
 
 if ($preparationChoice -eq 'Check') {
-    if (-not (Test-Prerequisites)) { exit 1 }
+    if (-not (Test-ModuloReadiness)) { exit 1 }
     exit 0
 }
 

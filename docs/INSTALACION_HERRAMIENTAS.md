@@ -103,7 +103,7 @@ Al iniciarse, el script muestra estas opciones en la terminal. Las opciones `1` 
 
 - `1`: prepara el entorno de Modulo con las herramientas instaladas. Confirma antes de crear el entorno, instalar dependencias, iniciar PostgreSQL y aplicar migraciones.
 - `2`: instala solo los prerrequisitos que falten, configura Volta/uv para el usuario actual y prepara Modulo. Confirma antes de continuar.
-- `3`: comprueba dependencias instaladas. Muestra `OK` o lo que falte y termina sin confirmacion ni cambios.
+- `3`: comprueba dependencias instaladas y el estado de Modulo. Revisa Volta, Node/npm fijados por el proyecto, uv, Python, los entornos y lockfiles, `backend/.env`, Docker, Compose, PostgreSQL, migraciones y la validacion de Django. Muestra `OK` o el motivo concreto con una solucion, sin confirmar ni cambiar archivos.
 - `0`: sale sin preparar el proyecto ni modificar el equipo.
 
 Es seguro ejecutarlo de nuevo en el mismo clon o en otro clon: reutiliza las herramientas y las cachés existentes, no actualiza herramientas ya presentes, no sobrescribe `backend/.env`, no modifica los lockfiles y aplica solamente las migraciones pendientes.
