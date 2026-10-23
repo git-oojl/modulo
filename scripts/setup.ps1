@@ -144,6 +144,26 @@ function Write-ReadinessResult {
     return $Ready
 }
 
+function Test-UvEnvironment {
+    param([string]$PythonVersion)
+
+    $uvExecutable = (Get-Command uv -ErrorAction Stop).Source
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $uvExecutable
+    $startInfo.Arguments = "sync --frozen --check --python $PythonVersion"
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    [void]$process.Start()
+    [void]$process.StandardOutput.ReadToEnd()
+    [void]$process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    return $process.ExitCode -eq 0
+}
+
 function Test-ModuloReadiness {
     $isReady = $true
     $expectedNode = $null
@@ -247,8 +267,7 @@ function Test-ModuloReadiness {
 
         Push-Location $backendPath
         try {
-            uv sync --frozen --check --python $pythonVersion *> $null
-            $backendReady = $LASTEXITCODE -eq 0
+            $backendReady = Test-UvEnvironment $pythonVersion
             $backendDetail = if ($backendReady) { 'uv.lock esta sincronizado con el entorno local' } else { 'falta .venv o no coincide con uv.lock' }
             Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail 'Elige [1] para ejecutar uv sync --frozen.' | Out-Null
             if (-not $backendReady) { $isReady = $false }
