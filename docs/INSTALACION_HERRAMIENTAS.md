@@ -99,7 +99,7 @@ El script es la forma recomendada de preparar Modulo en Windows. Tras clonar, ej
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-Al iniciarse, el script muestra estas opciones en la terminal y pide confirmar la elección antes de continuar:
+Al iniciarse, el script muestra estas opciones en la terminal y pide confirmar la eleccion antes de continuar con `[Y/n]` (`Y` confirma; `N` cancela):
 
 - `1`: instala solo los prerrequisitos que falten, configura Volta/uv para el usuario actual y prepara Modulo.
 - `2`: prepara Modulo usando solo las herramientas ya instaladas, sin cambiar el `PATH` ni las variables de entorno del usuario.

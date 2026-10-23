@@ -114,12 +114,12 @@ function Confirm-PreparationChoice {
     param([string]$Description)
 
     while ($true) {
-        $confirmation = (Read-Host "Elegiste: $Description. Confirmas? [S/n]").Trim().ToUpperInvariant()
+        $confirmation = (Read-Host "Elegiste: $Description. Confirmas? [Y/n]").Trim().ToUpperInvariant()
         switch ($confirmation) {
             '' { return $true }
-            'S' { return $true }
+            'Y' { return $true }
             'N' { return $false }
-            default { Write-Warning 'Respuesta no valida. Escribe S o N.' }
+            default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
         }
     }
 }
