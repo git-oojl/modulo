@@ -1,590 +1,623 @@
-# Project Bible — Modulo
+# Biblia del Proyecto
 
-**Version:** 1.2 compact  
-**Baseline date:** October 2, 2026  
-**Status:** core concept and architecture frozen
+**MODULO — Plataforma de operaciones inmobiliarias**  
+**Versión:** 1.4 · **Fecha:** 15 de octubre de 2026
 
----
+## 1. Propósito y definición
 
-## 1. Purpose and definition
+Modulo es un sistema en web para la operación diaria de una inmobiliaria: la empresa que intermedia ventas y rentas de inmuebles. Su API concentra en un sistema propio:
 
-**Modulo** is a modular, API-first real estate operations platform that brings the following into a system the company controls:
+- contactos y prospectos;
+- asesores y usuarios;
+- propiedades, características y fotografías;
+- citas, actividad y seguimiento;
+- cierres de venta o renta y comisiones estimadas;
+- supervisión operativa;
+- catálogo público básico;
+- acceso web responsivo e instalable como PWA.
 
-- contacts and prospects;
-- agents and users;
-- properties and photos;
-- appointments, activity, and follow-up;
-- operational oversight;
-- a basic public property catalog;
-- responsive web access, installable as a PWA.
+**Términos de negocio:** un prospecto es una persona interesada que todavía puede no ser cliente; un asesor atiende contactos y propiedades; una captación es incorporar un inmueble al inventario; un seguimiento es la próxima acción pendiente con un contacto; un cierre es una venta o renta concretada; y una comisión es la remuneración asociada a esa operación. CRM significa gestión de relaciones con contactos y clientes.
 
-Its purpose is to give a real estate company control over its data and operations without making the business structurally dependent on a franchise, property portal, or external vendor.
+Su objetivo es que la inmobiliaria conserve sus datos y controle el recorrido completo, desde la primera consulta hasta el cierre, sin depender estructuralmente de franquicias, portales o proveedores.
 
-Modulo **is not intended to become a massive sales CRM, ERP, marketplace, or all-in-one marketing suite**. It should be useful enough for a real-world real estate operation while remaining small enough to finish, maintain, and extend properly.
+Modulo no es un ERP ni un sistema de contabilidad ni una página web normal, pero sí registra la información comercial y económica elemental de sus operaciones. Debe ser suficientemente útil para una inmobiliaria real y suficientemente pequeño para construirse, mantenerse y ampliarse con criterio.
 
-This Bible defines the product, its architecture, its boundaries, and its technical criteria. It is not a project schedule, task assignment, or guide to academic deliverables.
+Esta Biblia define el producto, sus páginas, estructura de código, arquitectura, límites y criterios de aceptación. Es una especificación del resultado esperado, no un cronograma ni una asignación de tareas.
 
----
+## 2. En breve
 
-## 2. Official elevator pitch
+Modulo reúne en un solo lugar los contactos, asesores, inmuebles, visitas, seguimientos y cierres de una inmobiliaria. Un asesor organiza su actividad; gerencia conoce la operación y sus resultados; y el inventario interno alimenta el catálogo público sin duplicar registros. La empresa conserva la fuente de verdad y puede conectar otros servicios después.
 
-Modulo is a real estate company’s own operations platform: it brings clients, agents, properties, appointments, and follow-up into a system the company controls. Agents manage their work, while management gains visibility into day-to-day operations. The same property inventory can power a public catalog and future integrations without handing the source of truth over to third parties.
+## 3. Principios no negociables
 
-## 3. Non-negotiable principles
+1. Los datos y la lógica del negocio son el activo durable. La interfaz es reemplazable.
+2. PostgreSQL es la fuente de verdad para la información central de Modulo.
+3. Angular es un cliente de la plataforma, no el lugar donde viven las reglas críticas.
+4. Las integraciones rodean al núcleo; no lo poseen. Ningún portal, calendario, servicio de mensajería o proveedor externo puede convertirse en requisito para consultar o conservar los datos centrales.
+5. La marca es configuración, no arquitectura. Modulo puede usarse hoy bajo una marca y mañana bajo otra sin reconstruir el dominio.
+6. Se prefiere la solución más simple y mantenible que preserve una buena arquitectura.
+7. Las funcionalidades opcionales deben poder activarse o retirarse sin romper el núcleo.
+8. El historial útil se conserva. Los registros comerciales importantes se archivan antes de eliminarse cuando sea razonable.
+9. La portabilidad importa: los datos principales deben poder exportarse y los proveedores deben poder sustituirse.
+10. Una extensión no es una prohibición. Las nuevas funciones no entran automáticamente en esta versión, pero la arquitectura debe permitir incorporarlas cuando aporten valor sin agrandar el núcleo innecesariamente.
 
-1. **Data and business logic are the durable assets.** The interface is replaceable.
-2. **PostgreSQL is the source of truth** for Modulo’s core data.
-3. **Angular is a client of the platform**, not where critical business rules live.
-4. **Integrations surround the core; they do not own it.** No portal, calendar, messaging service, or external vendor may become a requirement for accessing or retaining core data.
-5. **Branding is configuration, not architecture.** Modulo can run under one brand today and another tomorrow without rebuilding the domain model.
-6. **Prefer the simplest maintainable solution** that preserves sound architecture.
-7. **Optional features must be removable or toggleable without breaking the core.**
-8. **Useful history is preserved.** Important business records should be archived rather than deleted whenever reasonable.
-9. **Portability matters:** core data must be exportable and vendors must be replaceable.
-10. **New ideas are not in scope by default.** If an idea significantly expands the product or introduces unnecessary dependency, it is treated as a future extension.
+**Prioridad ante conflictos:**
 
-Priority when tradeoffs arise:
-
-1. data integrity;
-2. backend architecture;
-3. security and permissions;
-4. real operational workflow;
+1. integridad de datos;
+2. arquitectura backend;
+3. seguridad y permisos;
+4. flujo operacional real;
 5. API;
-6. usability;
-7. visual presentation;
+6. usabilidad;
+7. presentación visual;
 8. PWA;
-9. integrations;
-10. experimental features.
+9. integraciones;
+10. funciones experimentales.
 
----
+## 4. Arquitectura
 
-## 4. Architecture
-
-Modulo will be a **modular monolith with a REST API**.
+Modulo será un monolito modular con API REST.
 
 ```text
-Angular / PWA / future clients
+Angular / PWA / clientes futuros
               ↓
-          REST API v1
+         REST API v1
               ↓
         Django + DRF
-        ↙     ↓      ↘
-PostgreSQL  Storage  Integrations
+       ↙     ↓      ↘
+ PostgreSQL  Storage  Integraciones
 ```
 
-There will be a single deployable Django backend, internally divided by domain. Microservices and separate databases per module will not be introduced without a real need.
+Habrá un solo backend Django desplegable, dividido internamente por dominio. No se usarán microservicios ni bases independientes por módulo sin una necesidad real.
 
-### Preferred monorepo structure
+### Estructura objetivo del repositorio
+
+Modulo utiliza un monorepositorio. Las aplicaciones Django se organizan directamente en `backend/`, sin directorio intermedio `apps/`. La estructura definida es:
 
 ```text
-/
-├── frontend/      Angular
-├── backend/       Django
-├── infra/         Docker and deployment
-└── docs/          architecture and decisions
+modulo/
+ ├── PROJECT_BIBLE.md          especificación fuente de verdad
+ ├── README.md                 instalación y operación
+ ├── backend/
+ │   ├── config/               settings, urls, ASGI y WSGI
+ │   ├── core/                 infraestructura compartida
+ │   ├── organizations/        identidad, fuentes y ajustes
+ │   ├── accounts/             usuarios, roles y perfiles
+ │   ├── contacts/             contactos, intereses, actividad
+ │   ├── properties/           inventario y archivos
+ │   ├── appointments/         citas y resultados
+ │   ├── closings/             cierres y comisiones estimadas
+ │   ├── integrations/         adaptadores y exportaciones
+ │   ├── manage.py
+ │   ├── pyproject.toml
+ │   ├── uv.lock
+ │   └── .env.example
+ ├── frontend/
+ │   ├── src/app/
+ │   │   ├── core/             auth, api, guards, modelos
+ │   │   ├── layout/           shells y navegación
+ │   │   ├── shared/           componentes reutilizables
+ │   │   ├── features/         áreas funcionales (abajo)
+ │   │   ├── app.routes.ts
+ │   │   └── app.config.ts
+ │   ├── public/               iconos, i18n y manifest
+ │   ├── ngsw-config.json
+ │   ├── package.json
+ │   └── package-lock.json
+ ├── infra/                     Compose, contenedores, deploy
+ ├── docs/                      arquitectura, decisiones, capturas
+ └── scripts/                   preparación y datos demo
 ```
 
-The frontend and backend remain independently separable applications even if they share a repository.
+En `frontend/src/app/features/` existirán `auth/`, `dashboard/`, `contacts/`, `properties/`, `appointments/`, `closings/`, `agents/`, `users/`, `settings/` y `catalog/`. Cada área agrupa sus páginas, componentes y servicios; los modelos compartidos, interceptores y guardas de rutas viven en `core/`. La PWA y sus borradores locales se administran desde `core/`, sin crear otro backend. Cada aplicación Django mantiene `models.py`, `migrations/` y `tests/`, e incorpora `serializers.py`, `views.py`, `urls.py` y `services.py` cuando se necesiten.
 
-### Backend domains
+`core` aporta utilidades; `organizations` gestiona configuración y fuentes; `accounts`, usuarios; `contacts`, prospectos e intereses; `properties`, inmuebles y medios; `appointments`, citas; `closings`, operaciones concretadas; e `integrations`, adaptadores y exportaciones. Frontend y backend son aplicaciones desplegables por separado. Existe una organización inicial, no un SaaS multiempresa.
 
-```text
-backend/
-├── core/
-├── organizations/
-├── accounts/
-├── contacts/
-├── properties/
-├── appointments/
-└── integrations/
-```
-
-- `core`: shared utilities and infrastructure.
-- `organizations`: identity, time zone, language, currency, and module configuration.
-- `accounts`: users, profiles, authentication, and permissions.
-- `contacts`: prospects and clients.
-- `properties`: inventory and media.
-- `appointments`: appointments, activity, and follow-up.
-- `integrations`: external adapters.
-
-Initially, there will be a single organization. The organization concept is retained to decouple system identity, **not to build a full multi-tenant SaaS product**.
-
----
-
-## 5. Technology stack
+## 5. Stack tecnológico
 
 ### Frontend
 
-- Angular **21.x LTS**, kept on its latest patched minor release. It receives
-  critical and security fixes through June 2027.
-- TypeScript **>=5.9.0 <6.0.0**, and RxJS **^6.5.3 or ^7.4.0**, matching the
-  Angular 21 compatibility matrix.
-- Node.js **22.23.3 LTS** (the existing Volta default), with future updates
-  limited to the 22.x line. It is compatible with Angular 21 and receives
-  security updates through April 2027; no Node 24 installation is required.
-- npm supplied by the selected Node LTS release + committed `package-lock.json`.
+- Angular 21.x
+- TypeScript 5.9.x
+- Node.js 22.x
+- npm + `package-lock.json`
 - Angular Router
 - Reactive Forms
 - HttpClient
 - Angular Material
-- SCSS/CSS + CSS variables for theming
+- SCSS/CSS + variables CSS para theming
 - Transloco
 - `@angular/pwa`
-- Capacitor, only as a later mobile extension
+- Capacitor, solamente como extensión móvil posterior
 
 ### Backend
 
-- Python **3.12.x**, kept on the latest available security patch. Python 3.12
-  receives security fixes through October 2028; do not advance the project to a
-  newer Python minor without a deliberate compatibility migration.
-- Django **5.2 LTS**, kept on the latest 5.2 security/bug-fix release (LTS
-  security support through at least April 2028).
-- Django REST Framework **3.18.x**, kept on its latest patch release; it supports
-  Django 5.2 and is the current maintained DRF series.
-- PostgreSQL **17.x**, kept on the latest minor release. This mature, supported
-  release line receives fixes through November 2029.
-- `psycopg` **3.x**, on a current supported patch release.
-- `django-filter`, `drf-spectacular`, and Pillow: current maintained stable
-  releases compatible with Python 3.12 and Django 5.2, each pinned in the lock
-  file.
-- reproducible, exactly pinned Python dependencies and a committed lock file.
+- Python 3.12
+- Django 5.2 LTS
+- Django REST Framework 3.18.x
+- PostgreSQL 17.x
+- django-filter
+- OpenAPI mediante drf-spectacular
+- Pillow cuando sea necesario
+- uv y `uv.lock` para dependencias Python reproducibles
 
-### Infrastructure
+### Infraestructura
 
 - Git
-- Docker Engine and Docker Compose: current supported stable releases; use
-  maintained base images and apply their security patches regularly.
-- Docker Compose for local development and supporting services
-- configuration through environment variables
-- S3-compatible file storage in production
-- HTTPS required in production
-- infrastructure that can be moved between providers
+- Docker
+- Docker Compose para desarrollo local y servicios auxiliares
+- configuración mediante variables de entorno
+- almacenamiento de archivos compatible con S3 en producción
+- HTTPS obligatorio en producción
+- infraestructura sustituible entre proveedores
 
-### Dependency and image maintenance
+### Procesamiento asíncrono
 
-- Use only maintained, non-prerelease dependencies in production.
-- Pin application dependencies exactly in lock files. Pin production container
-  images to a maintained patch tag and immutable digest; do not use floating
-  `latest` tags.
-- Review dependency, Node/Python runtime, PostgreSQL, and container-image
-  security updates at least monthly; test and apply security updates promptly.
-- Before a major-version upgrade, review the vendor migration notes and run the
-  relevant automated tests. A major upgrade is intentional work, not an
-  unattended dependency update.
+No se añadirá una cola “por si acaso”. Cuando exista una necesidad real de tareas programadas o asíncronas, la opción preferida será Celery + Valkey.
 
-### Asynchronous processing
+### No forman parte de la arquitectura base
 
-A queue will not be added “just in case.” When there is a real need for scheduled or asynchronous tasks, the preferred option will be **Celery 5.6.x + Valkey 8.1.x**. These are mature, currently supported lines; Celery 5.6 supports Python 3.12. Both components must be kept on current patch releases and run in Linux containers or production Linux hosts.
+Firebase/Firestore como base principal, Supabase como sustituto de Django, GraphQL, microservicios, Kubernetes, NoSQL como almacenamiento principal, lógica crítica exclusiva en Angular, servicios propietarios como fuente maestra, IA o agentes de IA.
 
-### Not part of the base architecture
+## 6. Modelo de dominio
 
-Firebase/Firestore as the primary database, Supabase as a replacement for Django, GraphQL, microservices, Kubernetes, NoSQL as the primary datastore, critical logic living only in Angular, proprietary services as the system of record, AI, or AI agents.
+Los modelos podrán evolucionar, pero estas entidades y relaciones son obligatorias.
 
----
+### Organización
 
-## 6. Domain model
+Configuración de la inmobiliaria: nombre, branding, logotipo, zona horaria, idioma predeterminado, moneda y módulos activados.
 
-The models may evolve, but the following entities and relationships are required.
+### Usuario y perfil de asesor
 
-### Organization
+Django administra autenticación y contraseñas. El perfil de asesor agrega información profesional al usuario cuando corresponda. No se implementará criptografía propia.
 
-Real estate company configuration: name, branding, logo, time zone, default language, currency, and enabled modules.
+### Contacto
 
-### User and agent profile
+Una sola entidad representa la evolución comercial de una persona, evitando modelos duplicados para “lead”, “prospecto” y “cliente”.
 
-Django manages authentication and passwords. The agent profile adds professional information to a user when applicable. No custom cryptography will be implemented.
+**Campos mínimos:** UUID, nombre, teléfono, correo opcional, asesor responsable, origen, estado, observaciones y timestamps.
 
-### Contact
+**Estados iniciales:** prospecto, cliente activo, cliente cerrado, perdido, inactivo.
 
-A single entity represents a person’s progression through the commercial relationship, avoiding duplicate models for “lead,” “prospect,” and “client.”
+### Fuente
 
-Minimum fields: UUID, name, phone, optional email, assigned agent, source, status, notes, and timestamps.
+Las fuentes de prospectos y citas son configurables: guardia, contacto personal, sitio web, recomendación, redes sociales, portales u otras.
 
-Initial statuses: prospect, active client, closed client, lost, inactive.
+### Propiedad
 
-### Source
+Registro maestro del inmueble. Debe incluir al menos: UUID, título, descripción, tipo, operación, precio, moneda, estado, ubicación, características, asesor responsable, visibilidad pública, medios y timestamps.
 
-Lead and appointment sources are configurable: office duty, personal contact, website, referral, social media, property portals, or others.
+**Estados iniciales:** borrador, activa, reservada, cerrada, archivada.
 
-### Property
+La propiedad existe independientemente de su publicación externa o pública.
 
-The master property record. At minimum it must include: UUID, title, description, type, transaction type, price, currency, status, location, features, assigned agent, public visibility, media, and timestamps.
+### Medio de propiedad
 
-Suggested initial statuses: draft, active, reserved, closed, archived.
+Representa fotografías u otros archivos. PostgreSQL guarda metadatos y referencia; el archivo físico vive en almacenamiento externo/local, nunca como blob principal en la base de datos.
 
-A property exists independently of whether it is published externally or publicly.
+### Cita
 
-### Property media
+Incluye: asesor, fecha/hora, contacto, propiedad cuando aplique, propósito, origen, estado, resultado y seguimiento.
 
-Represents photos or other files. PostgreSQL stores metadata and references; the physical file lives in external or local storage, never as the primary blob inside the database.
+**Estados iniciales:** programada, confirmada, completada, cancelada, no asistió.
 
-### Appointment
+Operación de propiedad (venta/renta) y propósito de cita (visita/captación/cierre/otro) son conceptos distintos y no deben mezclarse.
 
-Includes: agent, date/time, contact, property when applicable, purpose, source, status, outcome, and follow-up.
+### Interés en propiedad
 
-Initial statuses: scheduled, confirmed, completed, canceled, no-show.
+Relación mínima entre contacto y propiedad (con fecha y nota opcional) para saber qué inmueble le interesa a alguien antes de que exista una cita. No crea un embudo de ventas ni una entidad de negocio compleja.
 
-**Property transaction type** (sale/rent) and **appointment purpose** (showing/listing intake/closing/other) are separate concepts and must not be mixed.
+### Actividad / seguimiento
 
-### Activity / follow-up
+El historial de un contacto es una secuencia de actividades —notas, llamadas, resultados o cambios relevantes— y no un campo que se sobrescribe. Un seguimiento pendiente debe contar con responsable, fecha límite, estado pendiente/completado y vínculo al contacto; si se completa, permanece en el historial.
 
-A contact’s history is represented as a sequence of activities—notes, calls, follow-ups, outcomes, or meaningful changes—instead of repeatedly overwriting a single field.
+### Cierre y comisión estimada
 
-### Cross-cutting data rules
+Un cierre registra una venta o renta efectivamente concretada; no representa una cotización, intención de compra ni pago bancario. Incluye UUID, propiedad, contacto vinculado, asesor responsable, tipo de operación, fecha, monto pactado, moneda, estado (vigente o anulado) y fechas de registro. Gerencia registra o anula cierres; un cierre válido cambia la propiedad a cerrada y la retira del catálogo en una misma transacción de base de datos. Anularlo no reactiva automáticamente la publicación.
 
-- UUIDs as public identifiers for primary records.
-- `created_at` and `updated_at` on important records.
-- responsible user where applicable.
-- explicit statuses, with archiving preferred over destructive deletion.
-- dates stored consistently in UTC and displayed in the organization’s time zone.
-- configurable currency; MXN may be the initial default.
-- schema changes exclusively through Django migrations.
+Cada cierre admite una comisión estimada atribuida al asesor principal: porcentaje pactado e importe calculado sobre el monto del cierre, con estado pendiente o `reportada_pagada`. Si todavía no se conoce el porcentaje, la estimación queda sin calcular hasta completarlo. El estado se actualiza manualmente por gerencia; no demuestra un pago real, emite facturas ni calcula nómina. Comisiones divididas, pagos parciales e impuestos se reservan para una extensión.
 
----
+### Reglas transversales de datos
 
-## 7. Roles, authentication, and permissions
+- UUID como identificador público de registros principales.
+- `created_at` y `updated_at` en registros importantes.
+- usuario responsable cuando aplique.
+- estados explícitos y archivado preferente sobre borrado destructivo.
+- fechas almacenadas consistentemente en UTC y presentadas según la zona horaria de la organización.
+- moneda configurable; MXN puede ser el valor inicial.
+- cambios de esquema exclusivamente mediante migraciones Django.
 
-### Agent
+## 7. Roles, autenticación y permisos
 
-Can manage their contacts, appointments, and follow-ups; view permitted inventory; and create or modify properties based on permissions and ownership/responsibility.
+### Asesor
 
-### Management
+Puede gestionar sus contactos, citas y seguimientos; consultar inventario permitido; y crear/modificar propiedades según permisos y responsabilidad.
 
-Can view organization-wide activity, agents, contacts, appointments, properties, and basic reports, and can modify operational data where appropriate.
+### Gerencia
 
-### Administrator
+Puede consultar actividad global, asesores, contactos, citas, propiedades, reportes básicos y modificar información operacional cuando corresponda.
 
-Includes management capabilities and additionally manages users, permissions, configuration, and system settings.
+### Administrador
 
-### Security rules
+Incluye capacidades de gerencia y además administra usuarios, permisos, configuración y parámetros del sistema.
 
-Authorization is always enforced on the backend. Hiding UI elements in Angular is not security.
+### Matriz de acceso predeterminada
 
-For web/PWA use, Django sessions with secure, HttpOnly cookies, CSRF protection, and HTTPS are preferred. Sensitive credentials or tokens will not be stored in `localStorage` for convenience. A future mobile client may use a different authentication mechanism without replacing the underlying user and permission model.
+| Acción | Asesor | Gerencia | Administrador |
+|---|---|---|---|
+| Contactos y citas | Propios/asignados | Todos | Todos |
+| Seguimientos | Crear y cerrar propios | Ver y gestionar todos | Todos |
+| Propiedades | Ver activas; crear y editar asignadas | Ver y editar todas | Todas |
+| Cierres y comisiones | Consultar los atribuidos | Registrar, editar, anular y marcar comisión | Todos |
+| Dashboard | Métricas propias | Métricas globales | Globales |
+| Asesores | No | Consultar | Consultar |
+| Usuarios, roles, ajustes | No | No | Gestionar |
 
----
+La propiedad creada por un asesor se le asigna inicialmente; gerencia puede reasignarla. Un contacto recibido del sitio público queda sin asesor hasta su asignación interna. Los asesores no ven contactos ajenos ni propiedades privadas de otros. Los cierres los confirma gerencia; el asesor solo consulta sus propias operaciones y comisiones. Los cambios de permisos no se exponen a asesores.
 
-## 8. API and business logic
+### Reglas de seguridad
 
-The API is a formal part of Modulo:
+La autorización siempre se aplica en el backend. Ocultar elementos en Angular no es seguridad.
 
-```text
-/api/v1/
-```
+Para web/PWA se prefieren sesiones de Django con cookies seguras, HttpOnly, CSRF y HTTPS. No se guardarán credenciales o tokens sensibles en `localStorage` por conveniencia. Un cliente móvil futuro podrá usar otro mecanismo sin reemplazar el modelo de usuarios y permisos.
 
-It will be REST, JSON-based, versioned, documented with OpenAPI, and independent of Angular.
+## 8. API y lógica de negocio
+
+La API es parte formal de Modulo:
+
+`/api/v1/`
+
+Será REST, JSON, versionada, documentada con OpenAPI e independiente de Angular.
 
 ```text
 Angular Component
-      ↓
+       ↓
 Frontend Service
-      ↓
-REST API
-      ↓
+       ↓
+    REST API
+       ↓
 Service / Domain Logic
-      ↓
-Database
+       ↓
+    Database
 ```
 
-The API is responsible for validation, permissions, pagination, filtering, and consistent error handling.
+La API debe encargarse de validación, permisos, paginación, filtrado y errores consistentes.
 
-Important business rules must not be scattered across views, serializers, or frontend components. When an operation has meaningful behavior, it should have a clear service/domain layer. Multi-record operations will use transactions where appropriate.
+Las reglas importantes se centralizan en servicios de dominio (no repartidas entre views, serializers o componentes). Operaciones multi-registro usan transacciones cuando corresponda. Contratos mínimos de recursos, sin exigir una pantalla por endpoint:
 
----
+- **Privados:** `/api/v1/auth/`, `/api/v1/contacts/`, `/api/v1/properties/`, `/api/v1/appointments/`, `/api/v1/closings/`, `/api/v1/dashboard/`, `/api/v1/users/`, `/api/v1/organization/`, `/api/v1/sources/`.
+- **Anidados:** actividades e intereses de un contacto; medios de una propiedad; resultado y exportación `.ics` de una cita. El registro de cierre incluye su comisión estimada; no requiere API de pagos.
+- **Públicos:** `/api/v1/public/properties/`, `/api/v1/public/properties/{id}/` y `/api/v1/public/inquiries/`.
+- **Exportación:** CSV de contactos, propiedades y citas, exclusivamente para usuarios autorizados.
 
-## 9. Core functionality
+Todos los recursos privados usan UUID públicos, JSON y reglas uniformes de error/filtros/paginación. Se documentan en OpenAPI; nombres y comportamiento deben mantenerse coherentes entre frontend y backend.
 
-### Contact CRM
+## 9. Núcleo funcional
 
-The system must support creating, assigning, searching, and filtering contacts; storing their source and status; viewing their details, appointments, and history; and clearly answering who owns the contact, where they came from, what happened, and what happens next.
+### CRM de contactos
 
-Minimum filters: name, agent, status, and source.
+Debe registrar, asignar, buscar y filtrar contactos; guardar origen/estado; mostrar citas, inmuebles de interés, historial y próximo seguimiento; y responder quién atiende, de dónde llegó, qué ocurrió y qué sigue.
 
-### Property inventory
+**Filtros mínimos:** nombre, asesor, estado y origen.
 
-The system must support creating, viewing, updating, archiving, searching, filtering, and assigning properties; managing photos; setting status; and controlling public visibility.
+### Inventario de propiedades
 
-Minimum filters: status, agent, transaction type, property type, and visibility.
+Debe permitir crear, consultar, actualizar, archivar, buscar, filtrar, asignar asesor, administrar fotografías, definir estado y controlar visibilidad pública.
 
-### Appointments and follow-up
+**Filtros mínimos:** estado, asesor, operación, tipo y visibilidad.
 
-The system must support creating and updating appointments; associating them with a contact and property; assigning an agent, date/time, source, purpose, status, outcome, and subsequent follow-up.
+### Citas y seguimiento
 
-Minimum filters: date range, agent, status, source, and purpose.
+Debe crear y actualizar citas con contacto obligatorio, propiedad opcional, asesor, fecha/hora, origen, propósito, estado, resultado y seguimiento. Completar una cita exige registrar resultado; la fecha del siguiente seguimiento se guarda como actividad pendiente.
 
-An agenda/calendar view may exist, but the underlying model must not depend on a visual calendar representation.
+**Filtros mínimos:** periodo, asesor, estado, origen y propósito.
+
+Una vista de agenda puede existir, pero el modelo no debe depender de una representación visual de calendario.
+
+### Cierres y comisiones
+
+Gerencia registra ventas o rentas concretadas, consulta sus detalles, corrige o anula registros, calcula la comisión estimada con el porcentaje acordado y marca manualmente su estado. Listado filtrable por periodo, asesor, tipo de operación y estado de comisión. El asesor puede consultar únicamente sus cierres. Crear o corregir un cierre exige una propiedad y contacto válidos, y la operación debe coincidir con la permitida para el inmueble. No se registran transferencias bancarias, cobros ni pagos reales.
 
 ### Dashboard
 
-The dashboard should provide simple operational oversight, for example: upcoming appointments, appointments by agent/date range/status/source, pending follow-ups, properties by status, and recent activity.
+Muestra próximas citas, seguimientos pendientes, propiedades por estado, actividad reciente y cantidad/monto de cierres por periodo. Gerencia filtra por asesor, periodo y estado; el asesor solo ve información propia. Los montos de cierre son volumen comercial registrado, no utilidad, saldo de caja ni facturación fiscal.
 
-This is not a BI platform and does not include AI-based predictions, scoring, or forecasting.
+No es una plataforma de BI y no incluye predicciones, scoring o forecasting con IA.
 
-### Public property catalog
+### Catálogo público
 
-The public catalog is part of the final scope, but it must remain **decoupled and disableable**. It consumes the same property inventory and must never create a parallel inventory.
+Forma parte del alcance final, pero debe permanecer desacoplable y desactivable. Consume el mismo inventario; nunca crea un inventario paralelo.
 
-A property is published only when it meets explicit rules, for example:
+**Regla obligatoria de visibilidad pública:**
 
-```text
-active + marked public = visible
-```
+`activa + marcada como pública = visible`
 
-It must include listings, basic filters, property detail pages, photos, public-facing information, and a basic contact mechanism.
+Debe incluir listado, filtros básicos, ficha, fotografías e información pública. El formulario de consulta de la ficha crea un contacto con origen `sitio_web`, vincula la propiedad de interés y deja el registro sin asesor para asignación interna; exige validación, aviso de privacidad y protección básica contra abuso.
 
-The public endpoint will use a dedicated representation and must never accidentally expose internal notes, owner or client data, history, administrative fields, integration data, or private agent information. The exact address may be hidden.
+El endpoint público usa serializer específico: no expone notas, clientes, propietarios, historial, metadatos administrativos, integraciones ni datos privados de asesores. Por defecto no se expone la dirección exacta, solo ubicación pública aproximada. La publicación exige `estado=activa` y `publica=true`; al desactivar cualquiera desaparece del catálogo.
 
-It does not include a general-purpose CMS, blog, page builder, advanced SEO, multi-agency marketplace, mortgage tools, or ad management.
+No incluye CMS general, blog, constructor de páginas, SEO avanzado, marketplace multiagencia, herramientas hipotecarias ni administración publicitaria.
 
----
+## 10. Preguntas operativas que Modulo debe responder
 
-## 10. Operational questions Modulo must answer
+El sistema debe responder: ¿quién es este contacto, quién lo atiende, de dónde llegó, qué propiedad le interesa, qué citas tuvo y qué sigue? También: ¿qué propiedades están activas o publicadas, qué citas y seguimientos vienen, qué ventas o rentas se cerraron y qué comisiones estimadas siguen pendientes? La información se consulta según asesor, periodo, estado y origen cuando aplique.
 
-The system must make it easy to answer: **Who is this contact, who is handling them, where did they come from, which property are they interested in, what appointments have they had, what happened, and what happens next?** It must also answer: **Which properties are active or published, what appointments are coming up, which follow-ups are pending, and what activity is happening by agent, status, date range, or source?**
+## 11. Frontend, idiomas y PWA
 
-## 11. Frontend, languages, and PWA
+Angular se ocupa de presentación, navegación, formularios, interacción, validaciones de UX, consumo de API, responsive design e internacionalización; no de decisiones críticas del negocio.
 
-Angular is responsible for presentation, navigation, forms, interaction, UX validation, API consumption, responsive design, and internationalization—not critical business decisions.
+**Reglas:**
 
-Rules:
+- llamadas HTTP a través de servicios tipados, no directamente desde componentes;
+- evitar estado global complejo como NgRx mientras no sea necesario;
+- transformar respuestas de API en una capa apropiada cuando haga falta;
+- activación de módulos centralizada;
+- diseño claro, consistente, accesible y responsivo.
 
-- make HTTP calls through typed services, not directly from components;
-- avoid complex global state such as NgRx until it is actually needed;
-- transform API responses in an appropriate layer when necessary;
-- centralize module enablement;
-- keep the design clear, consistent, accessible, and responsive.
+La interfaz tendrá español predeterminado e inglés alternativo, con cambio en tiempo de ejecución mediante claves de traducción. Los datos escritos por usuarios no requieren traducción automática.
 
-The interface will use **Spanish by default with English as an alternative**, switchable at runtime through translation keys. User-entered data does not require automatic translation.
+La PWA será instalable, responsiva y servida por HTTPS. Capacidad offline obligatoria y acotada: la interfaz instalada abre sin red mediante caché de recursos estáticos, indica el estado de conexión y presenta una vista de indisponibilidad cuando una operación necesita la API. Desde esa vista, sin una ruta nueva, puede conservar borradores locales de notas de seguimiento sin vincularlos aún a contactos; al recuperar conexión, el usuario revisa el texto, selecciona el contacto y lo envía manualmente. El borrador se identifica como no enviado, puede borrarse y se elimina al cerrar sesión.
 
-The PWA is part of the final deliverable: it must be installable, responsive, usable on mobile and desktop, served over HTTPS, and use appropriate caching. **It will not be offline-first** and will not implement complex synchronization of offline edits.
+Se usará almacenamiento local específico para borradores, no para fichas privadas, credenciales, listados de contactos ni copias de la base de datos. No se promete consulta completa del CRM sin red, inicio de sesión offline, edición desconectada de citas/propiedades ni sincronización automática. El usuario recibirá una advertencia de no introducir información sensible en borradores locales.
 
-The mobile progression will be: stable web app → PWA → Capacitor/Android if it adds value. Separate native apps in Kotlin, Java, or Swift will not be developed within the current scope; iOS can initially use the PWA.
+El orden móvil será: web estable → PWA → Capacitor/Android si aporta valor. No habrá aplicaciones independientes en Kotlin, Java o Swift en esta versión; iOS podrá usar inicialmente la PWA.
 
----
+## 12. Mapa definitivo de páginas y navegación
 
-## 12. Files, environments, and deployment
+Convención: el mapa fija 24 rutas de página (4 públicas/de acceso y 20 internas); `/` es el catálogo público cuando está activado; `/login` es el acceso interno y `/app/` contiene pantallas protegidas. `:id` representa el UUID del registro, no una página distinta por registro. Formularios de alta y edición son rutas distintas, pero comparten componentes. Las tablas, filtros, pestañas, diálogos y estados vacíos no crean páginas adicionales.
 
-### Photos
+### Páginas públicas y acceso
 
-During development, photos may be stored locally. In production, provider-agnostic S3-compatible storage will be used.
+| Ruta | Página y contenido obligatorio | Acceso |
+|---|---|---|
+| `/` | Catálogo: inmuebles publicados, búsqueda y filtros | Público; módulo activo |
+| `/propiedades/:id` | Ficha: imágenes, características y formulario de consulta | Público; módulo activo |
+| `/aviso-de-privacidad` | Aviso para consultas públicas | Público |
+| `/login` | Inicio de sesión del personal | Público |
 
-### Environments
+### Páginas internas
 
-At minimum: development and production. Staging may be added when needed. Environment differences are handled through environment variables.
+| Ruta | Página y contenido obligatorio | Acceso |
+|---|---|---|
+| `/app/dashboard` | Indicadores, próximas citas y seguimientos | Tres roles; alcance por rol |
+| `/app/contactos` | Tabla, búsqueda y filtros | Tres roles; alcance por rol |
+| `/app/contactos/nuevo` | Alta de contacto | Tres roles |
+| `/app/contactos/:id` | Ficha, inmuebles de interés, citas y actividades | Autorizado sobre registro |
+| `/app/contactos/:id/editar` | Edición de contacto | Autorizado sobre registro |
+| `/app/propiedades` | Inventario, filtros y estados | Tres roles; alcance por rol |
+| `/app/propiedades/nueva` | Alta de inmueble | Tres roles |
+| `/app/propiedades/:id` | Ficha interna, medios y estado | Autorizado sobre registro |
+| `/app/propiedades/:id/editar` | Edición, imágenes y visibilidad | Autorizado sobre registro |
+| `/app/citas` | Lista, periodo, filtros y resultados | Tres roles; alcance por rol |
+| `/app/citas/nueva` | Programación de cita | Tres roles |
+| `/app/citas/:id` | Detalle, resultado y seguimiento | Autorizado sobre registro |
+| `/app/citas/:id/editar` | Edición de cita | Autorizado sobre registro |
+| `/app/cierres` | Listado y filtros de ventas/rentas concretadas | Tres roles; solo registros propios para asesor |
+| `/app/cierres/nuevo` | Registro de cierre y comisión estimada | Gerencia y administración |
+| `/app/cierres/:id` | Detalle de cierre y estado de comisión | Autorizado sobre registro |
+| `/app/cierres/:id/editar` | Corrección, anulación y comisión | Gerencia y administración |
+| `/app/asesores` | Directorio y actividad por asesor | Gerencia y administración |
+| `/app/usuarios` | Altas, activación y roles de acceso | Solo administración |
+| `/app/configuracion` | Organización, marca, fuentes y módulos | Solo administración |
 
-Secrets, passwords, private keys, credentials, and real API keys are never committed to version control.
+**Navegación:** al iniciar sesión se abre `/app/dashboard`; `/app` redirige al dashboard. Toda ruta privada exige sesión; se usa respuesta 403 sin permiso y 404 para una ruta inexistente, sin divulgar datos. Cerrar sesión regresa a `/login` y borra los borradores locales. Con el catálogo desactivado, `/` dirige a `/login` y sus fichas dejan de estar disponibles. La pantalla offline y los estados 403/404 son estados del sistema, no módulos de negocio adicionales. No se incluyen páginas separadas de calendario visual, contabilidad, pagos, facturación, pipeline ni chat.
 
-### Deployment
+## 13. Archivos, ambientes y despliegue
 
-The production architecture will conceptually be:
+### Fotografías
+
+En desarrollo pueden almacenarse localmente. En producción se utilizará almacenamiento compatible con S3, desacoplado del proveedor.
+
+### Ambientes
+
+Como mínimo: desarrollo y producción; staging puede agregarse cuando sea necesario. Las diferencias se resuelven mediante variables de entorno.
+
+Nunca se versionan secretos, contraseñas, claves privadas, credenciales o API keys reales.
+
+### Despliegue
+
+La arquitectura de producción será conceptualmente:
 
 ```text
 Internet / HTTPS
-      ↓
-Angular Frontend + /api/
-                  ↓
-                Django
-              ↙        ↘
-       PostgreSQL     Object Storage
+        ↓
+Frontend Angular + /api/
+        ↓
+      Django
+     ↙      ↘
+PostgreSQL  Object Storage
 ```
 
-For real-world use, backups and a reliable PostgreSQL deployment take priority over secondary features.
+Para uso real se priorizan respaldo y restauración comprobables de PostgreSQL, almacenamiento persistente para fotos y HTTPS antes que funciones accesorias. El README documenta instalación, variables, migraciones, datos de demostración, pruebas, compilación y despliegue.
 
----
+## 14. Integraciones e interoperabilidad
 
-## 13. Integrations and interoperability
+Todas las integraciones viven detrás de adaptadores en `integrations/`. No se harán llamadas directas a proveedores desde modelos de dominio o componentes Angular.
 
-All integrations live behind adapters in `integrations/`. Domain models and Angular components will not call external providers directly.
+**Orden recomendado de incorporación:**
 
-Recommended implementation order:
+1. Exportación obligatoria: CSV para contactos, propiedades y citas.
+2. Calendario local obligatorio: exportación `.ics` de citas.
+3. Email transaccional: mediante mecanismo desacoplado del proveedor.
+4. APIs de calendario: Google/Microsoft mediante adaptadores.
+5. Notificaciones push.
+6. WhatsApp/SMS, si el negocio justifica costo y políticas externas.
+7. Portales inmobiliarios, solamente con API/documentación oficial, acceso autorizado y condiciones claras.
 
-1. **Export:** CSV for contacts, properties, and appointments.
-2. **Local calendar:** `.ics` export for appointments.
-3. **Transactional email:** through a provider-agnostic mechanism.
-4. **Calendar APIs:** Google/Microsoft through adapters.
-5. **Push notifications.**
-6. **WhatsApp/SMS**, if the business case justifies the cost and external policy requirements.
-7. **Property portals**, only through official APIs/documentation, authorized access, and clear terms.
+No se hará scraping como sustituto de una API autorizada.
 
-Scraping will not be used as a substitute for an authorized API.
+Una referencia externa de propiedad debe almacenar por separado proveedor, ID externo, estado de publicación, última sincronización y último error. Un ID externo nunca sustituye al UUID interno.
 
-An external property reference must store the provider, external ID, publication status, last synchronization time, and last error separately. An external ID never replaces the internal UUID.
+**Reglas de independencia:**
 
-Independence rules:
+- CRM no depende del catálogo público.
+- inventario no depende de un portal.
+- citas no dependen de Google Calendar.
+- contactos no dependen de WhatsApp.
+- backend no depende de Angular para reglas de negocio.
+- identidad de organización no depende de una marca o franquicia concreta.
 
-- the CRM does not depend on the public catalog.
-- inventory does not depend on a property portal.
-- appointments do not depend on Google Calendar.
-- contacts do not depend on WhatsApp.
-- the backend does not depend on Angular for business rules.
-- organization identity does not depend on a specific brand or franchise.
+## 15. Seguridad, privacidad e historial
 
----
-
-## 14. Security, privacy, and history
-
-Before real data is used, Modulo must have at least:
+Antes de utilizar datos reales, Modulo debe contar como mínimo con:
 
 - HTTPS;
-- passwords managed by Django;
-- permissions enforced on the backend;
-- CSRF protection and secure cookies where applicable;
-- input validation;
-- properly restricted CORS;
-- secrets provided through environment variables;
-- file type and size validation;
-- protected private endpoints;
-- queries restricted according to permissions;
-- backups;
-- error handling that does not expose sensitive information.
+- contraseñas gestionadas por Django;
+- permisos aplicados en backend;
+- CSRF y cookies seguras cuando corresponda;
+- validación de entrada;
+- CORS restringido correctamente;
+- secretos por variables de entorno;
+- validación de tipo y tamaño de archivos;
+- endpoints privados protegidos;
+- consultas limitadas según permisos;
+- respaldos;
+- manejo de errores sin exponer información sensible.
 
-Development data must be synthetic or anonymized. A real customer database must not be copied indiscriminately into development environments or public demos.
+Los datos de desarrollo deben ser sintéticos o anonimizados. No se copiará indiscriminadamente una base real de clientes a entornos de desarrollo o demos públicas.
 
-A full enterprise audit platform is not required, but important records should preserve creation and modification information, as well as the responsible user where relevant, to avoid accidental loss of history.
+No se requiere una plataforma de auditoría empresarial completa, pero los registros importantes deben conservar creación, modificación y responsable cuando sea relevante, evitando pérdida accidental de historial.
 
-Before operating formally with real data, an additional review of privacy, data-protection requirements, and applicable legal obligations must be completed.
+Antes de operar formalmente con datos reales deberá realizarse una revisión adicional de privacidad, protección de datos y obligaciones legales aplicables.
 
----
-
-## 15. Quality and testing
+## 16. Calidad y pruebas
 
 ### Backend
 
-The backend has priority for automated testing. Tests should focus especially on:
+Tiene prioridad en pruebas automatizadas. Deben protegerse especialmente:
 
-- authentication and permissions;
-- validation;
-- create and update operations;
-- filters;
-- appointment rules;
-- publication rules;
-- public endpoints;
-- protection of private information.
+- autenticación y permisos;
+- validaciones;
+- creación y actualización;
+- filtros;
+- reglas de citas y seguimientos;
+- cierre de operaciones, comisiones y coherencia del inventario;
+- publicación y retirada del catálogo;
+- límites de acceso a borradores y comportamiento offline;
+- endpoints públicos;
+- protección de información privada.
 
-The project will not chase an artificial coverage percentage; important rules and workflows are what must be protected.
+No se perseguirá un porcentaje de cobertura artificial; se protegen reglas y flujos importantes.
 
 ### Frontend
 
-At minimum, the frontend should test important services, guards, critical transformations, and behavior that is prone to regressions. End-to-end tests may be added for the main workflows.
+Debe probar al menos servicios importantes, guards, transformaciones críticas y comportamiento propenso a romperse. Podrán añadirse pruebas end-to-end para los flujos principales.
 
-### Definition of Done
+### Criterios para considerar una función terminada
 
-A feature is considered complete when, as applicable:
+Una funcionalidad se considera terminada cuando, según corresponda:
 
-- it works and persists data correctly;
-- it validates input;
-- it enforces permissions;
-- it handles reasonable error cases;
-- it integrates with navigation and the API;
-- it works at expected screen sizes;
-- it uses internationalization for fixed UI text;
-- it has tests when it contains critical rules;
-- it does not introduce secrets or break other modules.
+- funciona y persiste correctamente;
+- valida entradas;
+- aplica permisos;
+- maneja errores razonables;
+- se integra con navegación y API;
+- funciona en tamaños de pantalla esperados;
+- usa internacionalización para texto fijo;
+- tiene pruebas cuando contiene reglas críticas;
+- comunica claramente si opera sin conexión y si un borrador no se ha enviado;
+- no introduce secretos ni rompe otros módulos.
 
----
+## 17. Capacidades transversales obligatorias
 
-## 16. Required cross-cutting capabilities
+Los módulos centrales comparten búsqueda y filtros; responsables; estados e historial; archivado preferente sobre borrado; validación y permisos en backend; paginación; separación de datos públicos y privados; y exportación de contactos, propiedades, citas y cierres. Los importes se guardan con precisión decimal y moneda explícita; los borradores offline nunca son fuente de verdad.
 
-Core modules must follow consistent standards: useful search and filtering; assignment of responsible users; explicit statuses; timestamps and history; archiving preferred over deletion; backend validation and permissions; pagination where appropriate; strict separation of public and private data; and reasonable export capabilities for contacts, properties, and appointments.
+## 18. Alcance final obligatorio
 
-## 17. Required final scope
-
-Modulo is considered functionally complete when the following are in place:
+Modulo se considera funcionalmente completo cuando existan:
 
 ### Backend
 
-- working Django + PostgreSQL stack;
-- REST API v1 and OpenAPI;
-- users, profiles, and permissions;
-- contacts;
-- properties and photos;
-- appointments, activity, and follow-up;
-- filters;
-- controlled public endpoints;
-- tests for important rules.
+- Django + PostgreSQL operativos;
+- API REST v1 y OpenAPI;
+- usuarios, perfiles y permisos;
+- contactos, intereses y seguimientos con vencimiento;
+- propiedades y fotografías;
+- citas, actividad y seguimiento;
+- cierres y comisiones estimadas con permisos y consistencia transaccional;
+- filtros;
+- endpoints públicos controlados;
+- pruebas de reglas importantes.
 
 ### Frontend
 
 - login;
 - dashboard;
-- contact management;
-- property management;
-- appointment management;
-- basic public property catalog;
-- Spanish/English;
-- responsive design.
+- gestión de contactos;
+- gestión de propiedades;
+- gestión de citas;
+- listado, alta y detalle/edición de cierres;
+- catálogo público básico y formulario de consulta;
+- pantallas de asesores, usuarios y configuración según rol;
+- español/inglés;
+- diseño responsivo.
 
-### Distribution and operations
+### Distribución y operación
 
-- web application;
-- installable PWA;
-- environment-variable configuration;
-- reproducible migrations;
-- reproducible demo data;
-- documented run and deployment process;
-- basic data export.
+- aplicación web;
+- PWA instalable con interfaz offline y borrador local manual;
+- configuración por variables de entorno;
+- migraciones reproducibles;
+- datos demo reproducibles;
+- proceso documentado de ejecución y despliegue;
+- exportación CSV de datos centrales, `.ics` de citas y respaldo documentado.
 
-### Workflows that must work end to end
+### Flujos que deben funcionar de extremo a extremo
 
-1. **Contact:** create → assign agent/source → view → record history.
-2. **Property:** create → add details/photos → assign → activate/archive.
-3. **Appointment:** associate contact/property/agent → schedule → update outcome → follow up.
-4. **Oversight:** sign in → dashboard → filter → open related records.
-5. **Publishing:** internal property → mark public → appears publicly → disable → disappears.
-6. **Language:** Spanish → switch to English → interface updates.
-7. **PWA:** install → open → authenticate → use authorized features.
+1. **Contacto:** crear → asignar asesor/origen → asociar inmueble de interés → registrar actividad/pendiente.
+2. **Propiedad:** crear → completar información/fotos → asignar → activar/archivar.
+3. **Cita:** asociar contacto/propiedad/asesor → programar → actualizar resultado → seguimiento.
+4. **Supervisión:** iniciar sesión → dashboard → filtrar → abrir registros relacionados.
+5. **Cierre:** registrar venta/renta → vincular asesor/contacto/propiedad → calcular comisión → cerrar y retirar inmueble del catálogo.
+6. **Publicación:** propiedad activa → marcar pública → consultar ficha → generar contacto → desactivar → desaparecer.
+7. **Idioma:** español → cambiar a inglés → interfaz actualizada.
+8. **PWA offline:** instalar → cargar con red → desconectar → abrir interfaz → guardar borrador → reconectar → revisar y enviarlo manualmente.
 
----
+## 19. Extensiones y límites del producto
 
-## 18. Extensions and out of scope
+### Capacidades futuras compatibles con la arquitectura
 
-### Later goal, non-blocking
+- Android mediante Capacitor; correo transaccional y recordatorios automáticos;
+- calendarios externos, notificaciones push, WhatsApp Business y portales autorizados;
+- sincronización offline de registros con resolución de conflictos, si el uso real lo justifica;
+- comisiones divididas, pagos parciales, gastos y reportes comerciales más avanzados;
+- integraciones de cobro, facturación fiscal y contabilidad, sin reemplazar sus sistemas especializados;
+- documentos, firmas, importaciones masivas, automatizaciones y múltiples oficinas.
 
-- Android via Capacitor;
-- transactional email;
-- automatic reminders;
-- calendar API integration;
-- push notifications.
+### Límites de la primera versión
 
-### Possible future work
+La versión definida sí incluye cierres y estimación/seguimiento manual de comisiones, pero no procesa dinero, no registra libros contables ni emite facturas fiscales. También incluye un modo offline limitado, no una réplica local del CRM. Estas capacidades más amplias podrán agregarse mediante módulos o integraciones cuando tengan un caso de uso concreto.
 
-Official property portal integrations, WhatsApp Business, SMS, two-way calendar synchronization, advanced analytics, bulk imports, automations, advanced lead/deal management, documents, signatures, configurable workflows, multiple offices, or multiple organizations.
+### No objetivos estructurales
 
-### Out of scope for now
+- ERP generalista, nómina o contabilidad completa como núcleo de Modulo;
+- IA, agentes o automatizaciones predictivas como fundamento del producto;
+- contratos y firmas electrónicas de extremo a extremo en esta versión;
+- marketplace multiempresa, red social, chat interno o suite de marketing;
+- CMS/blog/SEO avanzado y constructor de páginas;
+- scraping de portales o conexiones sin autorización;
+- aplicaciones móviles nativas independientes;
+- microservicios y SaaS multiempresa completo;
+- recopilación innecesaria de datos personales sensibles.
 
-- AI, agents, chatbots, or automated recommendations;
-- ERP, accounting, payroll, invoicing, payments, or commissions;
-- full contract management or electronic signatures;
-- unnecessary storage of sensitive personal identification data;
-- marketplace, social network, or internal chat;
-- full marketing system;
-- advanced CMS/blog/SEO or site builder;
-- scraping or portal synchronization without authorized APIs;
-- standalone native mobile applications;
-- offline-first operation;
-- microservices;
-- full multi-tenant SaaS.
+## 20. Durabilidad y criterio de supervivencia
 
----
+Modulo debe seguir siendo útil aunque cambien Angular, la marca, los portales, el almacenamiento o el despliegue. Deben sobrevivir sin reconstrucción: modelos y migraciones, usuarios y permisos, contactos, propiedades, citas, cierres y comisiones registradas, historial, lógica de dominio, API/OpenAPI, pruebas y mecanismos de intercambio de datos.
 
-## 19. Durability and survival criteria
+## 21. Criterio para decisiones nuevas
 
-Modulo must remain useful even if Angular, the brand, the property portal, the storage provider, or the deployment method changes. The following should survive without being rebuilt: the data model and migrations, users and permissions, contact/property/appointment data, history, domain logic, API/OpenAPI, tests, adapters, and import/export capabilities.
+Antes de agregar una característica o dependencia importante, debe responderse:
 
-## 20. Criteria for new decisions
+1. ¿Resuelve un problema real observado?
+2. ¿Pertenece al núcleo o puede vivir como módulo?
+3. ¿Introduce un proveedor sin el cual dejaría de funcionar el núcleo?
+4. ¿Duplica información o crea otra fuente de verdad?
+5. ¿Puede agregarse después sin perder información ni bloquear el diseño?
+6. ¿Desplaza trabajo más importante?
+7. ¿La plataforma base ya resuelve suficientemente el problema?
+8. ¿La dependencia está mantenida, tiene licencia aceptable y puede sustituirse?
+9. ¿Estamos resolviendo una necesidad real o ampliando innecesariamente el alcance?
 
-Before adding a major feature or dependency, answer the following:
+La preferencia general es por tecnologías abiertas, estándares documentados y dependencias justificadas. Los niveles gratuitos de proveedores sirven para desarrollo o demostración; no son una arquitectura. Si se opera con datos reales, el primer presupuesto cubre hosting estable, base de datos y respaldos, almacenamiento y HTTPS; ninguna extensión comercial tiene precedencia sobre eso.
 
-1. Does it solve a real, observed problem?
-2. Does it belong in the core, or can it live as a module?
-3. Does it introduce a vendor without which the core would stop working?
-4. Does it duplicate information or create another source of truth?
-5. Can it be added later without losing information or blocking the design?
-6. Does it displace more important work?
-7. Does the base platform already solve the problem well enough?
-8. Is the dependency maintained, acceptably licensed, and replaceable?
-9. Are we building for a real need, or drifting into *scope creep*?
-
-The general preference is for open technologies, documented standards, and justified dependencies. Vendor free tiers may be useful for development or demonstrations; they are not an architecture.
-
-> **Final rule:** when the choice is between adding another feature and making the existing core functionality professional, secure, and reusable, prioritize the latter.
+**Regla final:** cuando haya que elegir entre agregar otra función o hacer profesional, segura y reutilizable la funcionalidad central existente, se prioriza la segunda.
