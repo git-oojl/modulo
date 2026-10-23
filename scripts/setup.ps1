@@ -144,6 +144,50 @@ function Write-ReadinessResult {
     return $Ready
 }
 
+function Write-ReadinessInfo {
+    param([string]$Name, [string]$Detail, [string]$Action)
+    Write-Host "[INFO] $Name - $Detail"
+    if ($Action) { Write-Host "       Accion: $Action" }
+}
+
+function Get-WslStatus {
+    $wslCommand = Get-Command 'wsl.exe' -ErrorAction SilentlyContinue
+    if (-not $wslCommand) {
+        return [PSCustomObject]@{ Available = $false; ExitCode = 1; Output = '' }
+    }
+
+    $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $startInfo.FileName = $wslCommand.Source
+    $startInfo.Arguments = '--status'
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+    $startInfo.StandardOutputEncoding = [System.Text.Encoding]::Unicode
+    $startInfo.StandardErrorEncoding = [System.Text.Encoding]::Unicode
+
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $startInfo
+    [void]$process.Start()
+    $output = $process.StandardOutput.ReadToEnd()
+    $errorOutput = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    return [PSCustomObject]@{
+        Available = $true
+        ExitCode = $process.ExitCode
+        Output = "$output`n$errorOutput"
+    }
+}
+
+function Get-WindowsFeatureState {
+    param([string]$FeatureName)
+    try {
+        $feature = Get-WindowsOptionalFeature -Online -FeatureName $FeatureName -ErrorAction Stop
+        return [PSCustomObject]@{ Available = $true; State = "$($feature.State)" }
+    } catch {
+        return [PSCustomObject]@{ Available = $false; State = 'No se pudo consultar sin permisos de administrador' }
+    }
+}
+
 function Invoke-UvReadOnly {
     param([string]$Arguments)
 
@@ -297,6 +341,34 @@ function Test-ModuloReadiness {
 
     Write-Host ''
     Write-Host 'Base de datos'
+    $wslStatus = $null
+    $wslVersionTwoReady = $false
+    if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) {
+        $wslStatus = Get-WslStatus
+        if (-not $wslStatus.Available) {
+            Write-ReadinessInfo 'WSL' 'no se encontro wsl.exe' 'Instala o habilita WSL si Docker Desktop usa el backend WSL 2.'
+        } elseif ($wslStatus.ExitCode -ne 0) {
+            Write-ReadinessInfo 'WSL' 'wsl --status no pudo consultar el estado' 'Ejecuta wsl --status para ver el detalle; Docker puede usar el backend Hyper-V.'
+        } elseif ($wslStatus.Output -match '(?im)^\s*Default Version:\s*2\s*$') {
+            $wslVersionTwoReady = $true
+            Write-ReadinessResult $true 'WSL 2' 'WSL responde y la version predeterminada es 2' '' | Out-Null
+        } else {
+            Write-ReadinessInfo 'WSL 2' 'no se confirma WSL 2 como version predeterminada' 'Ejecuta wsl --status; Docker puede usar el backend Hyper-V.'
+        }
+
+        foreach ($featureName in @('Microsoft-Windows-Subsystem-Linux', 'VirtualMachinePlatform')) {
+            $featureState = Get-WindowsFeatureState $featureName
+            if (-not $featureState.Available) {
+                Write-ReadinessInfo $featureName $featureState.State 'Consulta las caracteristicas de Windows desde PowerShell como administrador si Docker no inicia.'
+            } else {
+                $featureEnabled = $featureState.State -eq 'Enabled'
+                Write-ReadinessInfo $featureName $featureState.State $(if ($featureEnabled) { '' } else { 'Habilitala para usar el backend WSL 2 de Docker Desktop.' })
+                if ($featureEnabled -and $featureName -eq 'VirtualMachinePlatform') { $wslVersionTwoReady = $wslVersionTwoReady -and $featureEnabled }
+                if (-not $featureEnabled) { $wslVersionTwoReady = $false }
+            }
+        }
+    }
+
     if (-not (Test-Command 'docker')) {
         Write-ReadinessResult $false 'Docker' 'no esta instalado o no esta en PATH' 'Elige [2] para instalar Docker Desktop.' | Out-Null
         $isReady = $false
@@ -311,7 +383,15 @@ function Test-ModuloReadiness {
 
         docker info *> $null
         $daemonReady = $LASTEXITCODE -eq 0
-        Write-ReadinessResult $daemonReady 'Motor Docker' 'Docker Desktop o Docker Engine responde' 'Inicia Docker Desktop o el servicio Docker.' | Out-Null
+        if ($daemonReady) {
+            Write-ReadinessResult $true 'Motor Docker' 'Docker Desktop o Docker Engine responde' '' | Out-Null
+        } else {
+            $dockerFix = 'Inicia Docker Desktop o el servicio Docker y espera a que termine de arrancar.'
+            if ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT -and -not $wslVersionTwoReady) {
+                $dockerFix += ' Revisa el estado de WSL 2 y las caracteristicas Microsoft-Windows-Subsystem-Linux y VirtualMachinePlatform; puede requerirse reiniciar Windows.'
+            }
+            Write-ReadinessResult $false 'Motor Docker' 'no responde; Docker Desktop puede estar cerrado o su backend no estar listo' $dockerFix | Out-Null
+        }
         if (-not $daemonReady) { $isReady = $false }
 
         if ($composeReady -and $daemonReady) {
