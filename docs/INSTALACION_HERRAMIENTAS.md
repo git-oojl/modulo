@@ -24,7 +24,7 @@ El menú muestra las acciones disponibles:
 
 ![Menu del preparador](screenshots/setup-menu.png)
 
-Este informe de `[3]` es una ejecución real en un clon sin preparar: Volta, uv, Node/npm y WSL 2 están disponibles; faltan `node_modules`, `.venv`, `backend/.env` y Docker. Las opciones de estado de Windows aparecen como informativas porque consultarlas requiere una terminal elevada.
+Este informe de `[3]` muestra un entorno listo para desarrollar. Las opciones de estado de Windows pueden aparecer como informativas cuando PowerShell no está elevado.
 
 ![Informe real de comprobacion de dependencias](screenshots/setup-check.png)
 
