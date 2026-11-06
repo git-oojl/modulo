@@ -1,8 +1,181 @@
 <section class="page" aria-labelledby="dashboard-title">
-  <p class="page__eyebrow">Operación</p>
-  <h1 id="dashboard-title">Panel</h1>
-  <div class="page__empty-state">
-    <h2>Resumen operativo</h2>
-    <p>Este espacio reunirá la actividad y los pendientes relevantes para el equipo.</p>
+  <!-- Header Superior (Sin cambios) -->
+  <header class="topbar">
+    <div class="greeting">
+      <h1 id="dashboard-title">¡Hola {{ nombreUsuario }}!</h1>
+      <span class="date">{{ fechaActual | date:'MMM d, yyyy' }}</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn">🔔</button>
+      <div class="search-bar">
+        <input type="text" placeholder="Buscar..." />
+        <span class="search-icon">🔍</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Nuevo Grid Principal -->
+  <div class="grid-main">
+    
+    <!-- Columna Izquierda -->
+    <div class="col-left">
+      <!-- Tarjeta 1: Resumen de Actividad -->
+      <article class="card">
+        <div class="card-header">
+          <h2>Resumen de actividad</h2>
+          <a href="#">Ver todo →</a>
+        </div>
+        <div class="card-body">
+          <h3>Activas</h3>
+          <p class="big-number">45 <span>Propiedades</span></p>
+          <div class="gauge-container">
+             <div class="gauge-track">
+               <div class="gauge-fill" style="width: 70%;"></div>
+             </div>
+             <div class="gauge-labels">
+               <span>0</span><span>45</span><span>50</span>
+             </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 2: Próximas Citas -->
+      <article class="card">
+        <div class="card-header">
+          <h2>Próximas citas</h2>
+          <a href="#">Ver todo →</a>
+        </div>
+        <div class="card-body list-body">
+          <div class="list-item" *ngFor="let cita of proximasCitas">
+            <div class="date-badge">
+              <span class="month">{{ cita.mes }}</span>
+              <span class="day">{{ cita.dia }}</span>
+            </div>
+            <div class="list-info">
+              <h4>{{ cita.nombre }}</h4>
+              <p>{{ cita.propiedad }}</p>
+            </div>
+            <div class="time-badge">{{ cita.hora }}</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 3: Actividad Reciente (Limitada a 2) -->
+      <article class="card">
+        <div class="card-header">
+          <h2>Actividad reciente</h2>
+          <a href="#">Ver todo →</a>
+        </div>
+        <div class="tabs">
+          <button class="active">Todos</button>
+          <button>Hoy</button>
+          <button>Esta Semana</button>
+        </div>
+        <div class="card-body list-body">
+          <div class="list-item" *ngFor="let actividad of actividadReciente">
+            <div class="icon-box">{{ actividad.icono }}</div>
+            <div class="list-info">
+              <h4>{{ actividad.titulo }}</h4>
+              <p>{{ actividad.tipo }}</p>
+            </div>
+            <div class="list-date">{{ actividad.fecha }}</div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Columna Derecha -->
+    <div class="col-right">
+      <!-- Tarjeta 4: Metas y Seguimientos -->
+      <article class="card">
+        <div class="card-header">
+          <h2>Metas y seguimientos</h2>
+          <span class="date">{{ fechaActual | date:'MMM, yyyy' }}</span>
+        </div>
+        <div class="card-body flex-row">
+          <div class="stats">
+            <p class="label">Comisiones pendientes</p>
+            <p class="amount">$15,500 MXN</p>
+          </div>
+          <div class="gauge-large">
+            <div class="donut-chart"></div>
+            <p class="gauge-text"><strong>12K</strong> / 20K <br> Ventas</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Tarjeta 5: Estadísticas (Más alta para rellenar) -->
+      <article class="card card-stats">
+        <div class="card-header">
+          <h2>Estadísticas</h2>
+          <select class="dropdown">
+            <option>Propiedades más vistas</option>
+            <option>Citas por mes</option>
+          </select>
+        </div>
+        <div class="card-body">
+          <div class="bar-chart">
+            <div class="y-axis">
+              <span>$50k</span><span>$10k</span><span>$2k</span><span>$0</span>
+            </div>
+            <div class="bars">
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 80%;"></div><span>17 Dom</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 50%;"></div><span>18 Lun</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 60%;"></div><span>19 Mar</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 40%;"></div><span>20 Mié</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 90%;"></div><span>21 Jue</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 70%;"></div><span>22 Vie</span></div>
+              <div class="bar-group"><div class="bar light"></div><div class="bar dark" style="height: 85%;"></div><span>23 Sab</span></div>
+            </div>
+          </div>
+          <div class="legend">
+            <span><span class="dot light"></span> Esta semana</span>
+            <span><span class="dot dark"></span> Semana pasada</span>
+          </div>
+        </div>
+      </article>
+    </div>
+
   </div>
+
+  <!-- Fila 3: Resumen de operaciones (Se queda igual) -->
+  <article class="card operations-card">
+    <div class="card-header">
+      <h2>Resumen de operaciones</h2>
+      <span class="note">*Comparado con el mes pasado</span>
+    </div>
+    <div class="operations-grid">
+      <div class="op-item">
+        <div class="op-icon">🖊️</div>
+        <div class="op-info"><h4>Borradores</h4><p><strong>5 propiedades</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+      <div class="op-item">
+        <div class="op-icon">🏠</div>
+        <div class="op-info"><h4>Activas</h4><p><strong>25 propiedades</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+      <div class="op-item">
+        <div class="op-icon">🔑</div>
+        <div class="op-info"><h4>Reservadas</h4><p><strong>8 propiedades</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+      <div class="op-item">
+        <div class="op-icon">✅</div>
+        <div class="op-info"><h4>Cerradas</h4><p><strong>12 propiedades</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+      <div class="op-item">
+        <div class="op-icon">📂</div>
+        <div class="op-info"><h4>Archivadas</h4><p><strong>3 propiedades</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+      <div class="op-item active">
+        <div class="op-icon">👥</div>
+        <div class="op-info"><h4>Prospectos</h4><p><strong>20 contactos</strong></p></div>
+        <span class="trend">→</span>
+      </div>
+    </div>
+  </article>
+
 </section>
