@@ -380,6 +380,7 @@ function Invoke-UvReadOnly {
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $uvExecutable
     $startInfo.Arguments = $Arguments
+    $startInfo.WorkingDirectory = (Get-Location).Path
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
@@ -396,11 +397,10 @@ function Invoke-UvReadOnly {
     }
 }
 
-function Test-UvEnvironment {
+function Get-UvEnvironmentStatus {
     param([string]$PythonVersion)
 
-    $result = Invoke-UvReadOnly "sync --frozen --check --python $PythonVersion"
-    return $result.ExitCode -eq 0
+    return Invoke-UvReadOnly "sync --frozen --check --python $PythonVersion"
 }
 
 function Test-ModuloReadiness {
@@ -506,9 +506,23 @@ function Test-ModuloReadiness {
 
         Push-Location $backendPath
         try {
-            $backendReady = Test-UvEnvironment $pythonVersion
-            $backendDetail = if ($backendReady) { 'uv.lock esta sincronizado con el entorno local' } else { 'falta .venv o no coincide con uv.lock' }
-            Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail 'Elige [1] para ejecutar uv sync --frozen.' | Out-Null
+            $backendSyncResult = Get-UvEnvironmentStatus $pythonVersion
+            $backendReady = $backendSyncResult.ExitCode -eq 0
+            if ($backendReady) {
+                $backendDetail = 'uv.lock esta sincronizado con el entorno local'
+                $backendFix = ''
+            } elseif ($backendSyncResult.Output -match '(?i)(unexpected argument|unrecognized arguments|unknown option|--check)') {
+                $backendDetail = 'la version instalada de uv no admite la comprobacion de sincronizacion'
+                $backendFix = 'Actualiza uv y vuelve a ejecutar [3].'
+            } else {
+                $backendDetail = 'falta .venv o no coincide con uv.lock'
+                $backendFix = 'Elige [1] para ejecutar uv sync --frozen.'
+            }
+            Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail $backendFix | Out-Null
+            if (-not $backendReady -and $backendSyncResult.Output) {
+                $uvDetail = ($backendSyncResult.Output -replace '[\r\n]+', ' ').Trim()
+                Write-Host "     Detalle de uv: $uvDetail"
+            }
             if (-not $backendReady) { $isReady = $false }
         } finally {
             Pop-Location
