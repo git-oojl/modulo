@@ -99,6 +99,8 @@ function Refresh-ProcessToolPath {
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Volta')
     Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Volta\bin')
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\resources\bin')
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\resources\bin')
     $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
     if ($programFilesX86) {
         Add-ProcessPathEntry (Join-Path $programFilesX86 'Docker\Docker\resources\bin')
@@ -110,6 +112,9 @@ function Get-DockerDesktopExecutable {
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
         $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\Docker Desktop.exe' }),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\Docker Desktop.exe'),
         (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
     )
     return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
@@ -124,7 +129,9 @@ function Get-DockerClientExecutable {
     $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'),
-        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\resources\bin\docker.exe' })
+        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\resources\bin\docker.exe' }),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\resources\bin\docker.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\resources\bin\docker.exe')
     )
     return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
 }
@@ -133,11 +140,43 @@ function Test-DockerInstalled {
     return [bool](Get-DockerClientExecutable)
 }
 
-function Test-DockerComposeAvailable {
+function Invoke-DockerCommand {
+    param([string[]]$Arguments)
+
     $docker = Get-DockerClientExecutable
-    if (-not $docker) { return $false }
-    & $docker compose version *> $null
-    return $LASTEXITCODE -eq 0
+    if (-not $docker) {
+        return [PSCustomObject]@{ ExitCode = 1; Output = 'No se encontro el cliente Docker.' }
+    }
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $docker
+    $startInfo.Arguments = (($Arguments | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + $_.Replace('"', '\"') + '"' } else { $_ }
+    }) -join ' ')
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    [void]$process.Start()
+    $standardOutput = $process.StandardOutput.ReadToEnd()
+    $standardError = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    return [PSCustomObject]@{
+        ExitCode = $process.ExitCode
+        Output = "$standardOutput$standardError".Trim()
+    }
+}
+
+function Write-DockerCommandOutput {
+    param($Result)
+    if ($Result.Output) { Write-Host $Result.Output }
+}
+
+function Test-DockerComposeAvailable {
+    $result = Invoke-DockerCommand -Arguments @('compose', 'version')
+    return $result.ExitCode -eq 0
 }
 
 function Test-DockerToolingAvailable {
@@ -145,10 +184,8 @@ function Test-DockerToolingAvailable {
 }
 
 function Test-DockerDaemon {
-    $docker = Get-DockerClientExecutable
-    if (-not $docker) { return $false }
-    & $docker info *> $null
-    return $LASTEXITCODE -eq 0
+    $result = Invoke-DockerCommand -Arguments @('info')
+    return $result.ExitCode -eq 0
 }
 
 function Start-DockerDaemon {
@@ -522,11 +559,12 @@ function Test-ModuloReadiness {
         Write-ReadinessResult $false 'Docker' 'no se encontro un cliente Docker instalado' 'Elige [2] para instalar Docker Desktop.' | Out-Null
         $isReady = $false
     } else {
-        $dockerVersion = (& $dockerExecutable --version 2>$null | Out-String).Trim()
+        $dockerVersionResult = Invoke-DockerCommand -Arguments @('--version')
+        $dockerVersion = $dockerVersionResult.Output
         Write-ReadinessResult $true 'Docker' $dockerVersion '' | Out-Null
 
-        & $dockerExecutable compose version *> $null
-        $composeReady = $LASTEXITCODE -eq 0
+        $composeResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+        $composeReady = $composeResult.ExitCode -eq 0
         Write-ReadinessResult $composeReady 'Docker Compose' 'comando docker compose disponible' 'Actualiza Docker Desktop o instala el plugin de Compose.' | Out-Null
         if (-not $composeReady) { $isReady = $false }
 
@@ -543,13 +581,14 @@ function Test-ModuloReadiness {
         if (-not $daemonReady) { $isReady = $false }
 
         if ($composeReady -and $daemonReady) {
-            docker compose -f $composeFile config --quiet *> $null
-            $composeConfigReady = $LASTEXITCODE -eq 0
+            $composeConfigResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'config', '--quiet')
+            $composeConfigReady = $composeConfigResult.ExitCode -eq 0
             Write-ReadinessResult $composeConfigReady 'Configuracion Compose' 'infra/compose.yaml es valido' 'Revisa infra/compose.yaml.' | Out-Null
             if (-not $composeConfigReady) { $isReady = $false }
 
-            $dbStatus = (& docker compose -f $composeFile ps db --format json 2>$null | Out-String).Trim()
-            if ($LASTEXITCODE -ne 0 -or -not $dbStatus) {
+            $dbStatusResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'ps', 'db', '--format', 'json')
+            $dbStatus = $dbStatusResult.Output
+            if ($dbStatusResult.ExitCode -ne 0 -or -not $dbStatus) {
                 Write-ReadinessResult $false 'PostgreSQL de Modulo' 'el contenedor no esta creado o no esta ejecutandose' 'Elige [1] para ejecutar docker compose up -d --wait.' | Out-Null
                 $isReady = $false
             } else {
@@ -643,16 +682,18 @@ if ($preparationChoice -eq 'Docker') {
     }
     Refresh-ProcessToolPath
     Require-Command 'docker' 'Instala Docker Desktop con Compose: https://docs.docker.com/get-docker/'
-    docker compose version
-    if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+    $composeVersionResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+    Write-DockerCommandOutput $composeVersionResult
+    if ($composeVersionResult.ExitCode -ne 0) { throw 'Docker Compose no esta disponible.' }
     if (-not (Start-DockerDaemon)) {
         throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
     }
 
     Push-Location $repositoryRoot
     try {
-        docker compose -f $composeFile up -d --wait
-        if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+        $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+        Write-DockerCommandOutput $postgresResult
+        if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
     } finally {
         Pop-Location
     }
@@ -749,8 +790,9 @@ if ($preparationChoice -eq 'Prepare' -and -not (Confirm-DockerStartup)) {
 Write-Host ''
 Write-Host '[3/3] Preparando PostgreSQL y migraciones...'
 Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/get-docker/'
-docker compose version
-if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+$composeVersionResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+Write-DockerCommandOutput $composeVersionResult
+if ($composeVersionResult.ExitCode -ne 0) { throw 'Docker Compose no esta disponible.' }
 
 if (-not (Start-DockerDaemon)) {
     throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
@@ -759,8 +801,9 @@ if (-not (Start-DockerDaemon)) {
 Push-Location $repositoryRoot
 try {
     Write-Host '[... ] Iniciando PostgreSQL y esperando a que este saludable...'
-    docker compose -f $composeFile up -d --wait
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+    Write-DockerCommandOutput $postgresResult
+    if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
     Write-Host '[OK] PostgreSQL esta listo.'
 } finally {
     Pop-Location
