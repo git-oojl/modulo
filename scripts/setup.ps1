@@ -83,6 +83,37 @@ function Configure-ManagedToolchains {
     Write-Host 'Volta queda al inicio del PATH de usuario y uv usara Python administrado por uv en nuevas terminales.'
 }
 
+function Get-FrontendLockHash {
+    $lockFile = Join-Path $frontendPath 'package-lock.json'
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($lockFile)
+    try {
+        return ([System.BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '')
+    } finally {
+        $stream.Dispose()
+        $sha256.Dispose()
+    }
+}
+
+function Test-FrontendDependenciesCurrent {
+    param([string]$LockHash)
+
+    $nodeModulesPath = Join-Path $frontendPath 'node_modules'
+    $markerFile = Join-Path $nodeModulesPath '.modulo-package-lock.sha256'
+    if (-not (Test-Path $nodeModulesPath) -or -not (Test-Path $markerFile)) { return $false }
+    if ((Get-Content -LiteralPath $markerFile -Raw).Trim() -ne $LockHash) { return $false }
+
+    npm ls --depth=0 --ignore-scripts *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Write-FrontendLockMarker {
+    param([string]$LockHash)
+
+    $markerFile = Join-Path $frontendPath 'node_modules\.modulo-package-lock.sha256'
+    Set-Content -LiteralPath $markerFile -Value $LockHash -NoNewline
+}
+
 function Add-ProcessPathEntry {
     param([string]$Entry)
 
@@ -276,15 +307,17 @@ function Get-PreparationChoice {
         Write-Host '  [2] Instalacion completa: herramientas + entorno de Modulo'
         Write-Host '  [3] Comprobar dependencias instaladas'
         Write-Host '  [4] Iniciar solo Docker y PostgreSQL'
+        Write-Host '  [5] Aplicar solo migraciones Django'
         Write-Host '  [0] Salir sin modificar el equipo'
-        $choice = (Read-Host 'Elige 1, 2, 3, 4 o 0').Trim()
+        $choice = (Read-Host 'Elige 1, 2, 3, 4, 5 o 0').Trim()
         switch ($choice) {
             '1' { return 'Prepare' }
             '2' { return 'Install' }
             '3' { return 'Check' }
             '4' { return 'Docker' }
+            '5' { return 'Migrate' }
             '0' { return 'Stop' }
-            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4 o 0.' }
+            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4, 5 o 0.' }
         }
     }
 }
@@ -325,6 +358,39 @@ function Confirm-DockerDesktopInstallation {
             default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
         }
     }
+}
+
+function Confirm-MigrationsAfterDocker {
+    while ($true) {
+        $confirmation = (Read-Host 'PostgreSQL esta listo. Aplicar tambien las migraciones Django? [y/N]').Trim().ToUpperInvariant()
+        switch ($confirmation) {
+            '' { return $false }
+            'Y' { return $true }
+            'N' { return $false }
+            default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
+        }
+    }
+}
+
+function Invoke-ModuloMigrations {
+    Require-Command 'uv' 'Instala uv o prepara el backend con la opcion [1].'
+    $envFile = Join-Path $backendPath '.env'
+    if (-not (Test-Path $envFile)) {
+        throw 'Falta backend/.env. Elige [1] para crear y preparar el entorno backend antes de aplicar migraciones.'
+    }
+
+    Push-Location $backendPath
+    try {
+        Write-Host '[Migraciones] Aplicando migraciones Django...'
+        uv run --frozen --no-sync --env-file .env python manage.py migrate
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron aplicar las migraciones. Elige [1] si falta preparar el entorno backend.' }
+        Write-Host '[Migraciones] Ejecutando validacion Django...'
+        uv run --frozen --no-sync --env-file .env python manage.py check
+        if ($LASTEXITCODE -ne 0) { throw 'Fallo la validacion Django despues de las migraciones.' }
+    } finally {
+        Pop-Location
+    }
+    Write-Host '[OK] Migraciones Django aplicadas.'
 }
 
 function Write-ReadinessResult {
@@ -642,7 +708,7 @@ function Test-ModuloReadiness {
         try {
             $migrationResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py showmigrations --plan'
             $migrationsReady = $migrationResult.ExitCode -eq 0 -and -not ($migrationResult.Output -match '\[ \]')
-            Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [1] para aplicar las migraciones pendientes.' | Out-Null
+            Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [5] para aplicar las migraciones pendientes.' | Out-Null
             if (-not $migrationsReady) { $isReady = $false }
 
             $djangoResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py check'
@@ -726,8 +792,43 @@ if ($preparationChoice -eq 'Docker') {
     } finally {
         Pop-Location
     }
-    Write-Host '[OK] Docker y PostgreSQL estan listos. No se modificaron backend, frontend ni migraciones.'
-    Write-Host 'Si el backend ya estaba preparado y necesitas aplicarlas: cd backend; uv run --frozen --env-file .env python manage.py migrate'
+    Write-Host '[OK] Docker y PostgreSQL estan listos.'
+    if (Confirm-MigrationsAfterDocker) {
+        Invoke-ModuloMigrations
+    } else {
+        Write-Host 'No se aplicaron migraciones. Elige [5] cuando quieras ejecutarlas.'
+    }
+    exit 0
+}
+
+if ($preparationChoice -eq 'Migrate') {
+    if (-not (Confirm-PreparationChoice 'iniciar PostgreSQL si hace falta y aplicar solo las migraciones Django')) {
+        Write-Host 'No se realizo ninguna accion.'
+        exit 0
+    }
+
+    if (-not (Test-DockerToolingAvailable)) {
+        if (-not (Confirm-DockerDesktopInstallation)) {
+            throw 'Se necesita Docker con Compose para aplicar las migraciones.'
+        }
+        Install-DockerDesktop
+    }
+    if (-not (Start-DockerDaemon)) {
+        throw 'Docker no se pudo iniciar. Abre Docker Desktop manualmente, espera a que este listo y vuelve a elegir [5].'
+    }
+
+    Push-Location $repositoryRoot
+    try {
+        Write-Host '[Migraciones] Iniciando PostgreSQL si hace falta...'
+        $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+        Write-DockerCommandOutput $postgresResult
+        if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    } finally {
+        Pop-Location
+    }
+
+    Invoke-ModuloMigrations
+    Write-Host '[OK] No se modificaron las dependencias del backend ni el frontend.'
     exit 0
 }
 
@@ -800,10 +901,16 @@ try {
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
         throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json."
     }
-    Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez descarga y descomprime cientos de paquetes. Las ejecuciones posteriores reutilizan la cache local de npm.'
-    volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund --prefer-offline
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
-    Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
+    $frontendLockHash = Get-FrontendLockHash
+    if (Test-FrontendDependenciesCurrent $frontendLockHash) {
+        Write-Host '[OK] Dependencias frontend ya coinciden con package-lock.json; se omite npm ci.'
+    } else {
+        Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez descarga y descomprime cientos de paquetes. Las ejecuciones posteriores reutilizan la cache local de npm.'
+        volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund --prefer-offline
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
+        Write-FrontendLockMarker $frontendLockHash
+        Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
+    }
 } finally {
     Pop-Location
 }
