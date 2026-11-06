@@ -8,6 +8,9 @@ $ErrorActionPreference = 'Stop'
 # uv y otros comandos nativos pueden escribir estado normal en stderr.
 # Sus codigos de salida se comprueban de forma explicita abajo.
 $PSNativeCommandUseErrorActionPreference = $false
+if ($PSVersionTable.PSVersion.Major -lt 5) {
+    throw 'scripts/setup.ps1 requiere Windows PowerShell 5.1 o PowerShell 7 o posterior.'
+}
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $frontendPath = Join-Path $repositoryRoot 'frontend'
 $backendPath = Join-Path $repositoryRoot 'backend'
@@ -23,6 +26,33 @@ function Require-Command {
     if (-not (Test-Command $Name)) {
         throw "$Name no esta disponible. $Hint"
     }
+}
+
+function Get-WinGetExecutable {
+    # Invocar el alias de WindowsApps cuando App Installer falta abre el dialogo
+    # generico de "Selecciona una aplicacion". Se prefiere el ejecutable real.
+    if (Test-Command 'Get-AppxPackage') {
+        $appInstaller = @(Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' -ErrorAction SilentlyContinue | Sort-Object Version -Descending)
+        foreach ($package in $appInstaller) {
+            if (-not $package.InstallLocation) { continue }
+            $candidate = Join-Path $package.InstallLocation 'winget.exe'
+            if (Test-Path $candidate) { return $candidate }
+        }
+    }
+
+    $command = Get-Command 'winget.exe' -CommandType Application -ErrorAction SilentlyContinue
+    if ($command -and $command.Source -and (Test-Path $command.Source) -and $command.Source -notlike '*\Microsoft\WindowsApps\*') {
+        return $command.Source
+    }
+    return $null
+}
+
+function Require-WinGet {
+    $winget = Get-WinGetExecutable
+    if (-not $winget) {
+        throw 'WinGet no esta disponible o el alias de WindowsApps esta roto. Instala o actualiza Microsoft App Installer desde Microsoft Store y vuelve a ejecutar el script; tambien puedes instalar las herramientas manualmente segun docs/INSTALACION_HERRAMIENTAS.md.'
+    }
+    return $winget
 }
 
 function Add-UserPathEntry {
@@ -69,23 +99,55 @@ function Refresh-ProcessToolPath {
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Volta')
     Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Volta\bin')
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    if ($programFilesX86) {
+        Add-ProcessPathEntry (Join-Path $programFilesX86 'Docker\Docker\resources\bin')
+    }
 }
 
 function Get-DockerDesktopExecutable {
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\Docker Desktop.exe' }),
         (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
     )
     return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
 }
 
-function Test-DockerDesktopInstalled {
-    return [bool](Get-DockerDesktopExecutable)
+function Get-DockerClientExecutable {
+    $dockerCommand = Get-Command 'docker.exe' -CommandType Application -ErrorAction SilentlyContinue
+    if ($dockerCommand -and $dockerCommand.Source -and (Test-Path $dockerCommand.Source)) {
+        return $dockerCommand.Source
+    }
+
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'),
+        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\resources\bin\docker.exe' })
+    )
+    return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
+}
+
+function Test-DockerInstalled {
+    return [bool](Get-DockerClientExecutable)
+}
+
+function Test-DockerComposeAvailable {
+    $docker = Get-DockerClientExecutable
+    if (-not $docker) { return $false }
+    & $docker compose version *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Test-DockerToolingAvailable {
+    return (Test-DockerInstalled) -and (Test-DockerComposeAvailable)
 }
 
 function Test-DockerDaemon {
-    if (-not (Test-Command 'docker')) { return $false }
-    docker info *> $null
+    $docker = Get-DockerClientExecutable
+    if (-not $docker) { return $false }
+    & $docker info *> $null
     return $LASTEXITCODE -eq 0
 }
 
@@ -122,9 +184,8 @@ function Install-MissingPrerequisites {
     $packages = @(
         @{ IsInstalled = { Test-Command 'volta' }; Id = 'Volta.Volta'; Name = 'Volta' },
         @{ IsInstalled = { Test-Command 'uv' }; Id = 'astral-sh.uv'; Name = 'uv' },
-        # El cliente docker tambien puede venir de Rancher, Podman u otro Engine. Para este
-        # proyecto [2] instala especificamente Docker Desktop, que incluye Compose y su backend.
-        @{ IsInstalled = { Test-DockerDesktopInstalled }; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop' }
+        # Docker puede venir de Desktop, MSI u otro Engine, pero el proyecto requiere Compose.
+        @{ IsInstalled = { Test-DockerToolingAvailable }; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop con Compose' }
     )
 
     $missing = @($packages | Where-Object { -not (& $_.IsInstalled) })
@@ -133,10 +194,10 @@ function Install-MissingPrerequisites {
         return $false
     }
 
-    Require-Command 'winget' 'Instala las herramientas manualmente: docs/INSTALACION_HERRAMIENTAS.md'
+    $winget = Require-WinGet
     foreach ($package in $missing) {
         Write-Host "Instalando $($package.Name) con WinGet..."
-        winget install --id $package.Id --exact --source winget --accept-source-agreements --accept-package-agreements
+        & $winget install --id $package.Id --exact --source winget --accept-source-agreements --accept-package-agreements
         if ($LASTEXITCODE -ne 0) { throw "No se pudo instalar $($package.Name) con WinGet." }
     }
 
@@ -144,13 +205,13 @@ function Install-MissingPrerequisites {
 }
 
 function Install-DockerDesktop {
-    Require-Command 'winget' 'Instala Docker Desktop manualmente: https://docs.docker.com/get-docker/'
+    $winget = Require-WinGet
     Write-Host 'Instalando Docker Desktop con WinGet...'
-    winget install --id 'Docker.DockerDesktop' --exact --source winget --accept-source-agreements --accept-package-agreements
+    & $winget install --id 'Docker.DockerDesktop' --exact --source winget --accept-source-agreements --accept-package-agreements
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar Docker Desktop con WinGet.' }
     Refresh-ProcessToolPath
-    if (-not (Test-DockerDesktopInstalled)) {
-        throw 'WinGet termino, pero no se encontro Docker Desktop. Cierra y abre una terminal nueva o completa el instalador antes de reintentar.'
+    if (-not (Test-DockerToolingAvailable)) {
+        throw 'WinGet termino, pero no se encontro Docker con Compose. Cierra y abre una terminal nueva o completa el instalador antes de reintentar.'
     }
     Write-Host '[OK] Docker Desktop esta instalado.'
 }
@@ -204,7 +265,7 @@ function Confirm-DockerStartup {
 
 function Confirm-DockerDesktopInstallation {
     while ($true) {
-        $confirmation = (Read-Host 'Docker Desktop no esta instalado. Instalarlo ahora con WinGet? [Y/n]').Trim().ToUpperInvariant()
+        $confirmation = (Read-Host 'Docker con Compose no esta disponible. Instalar Docker Desktop ahora con WinGet? [Y/n]').Trim().ToUpperInvariant()
         switch ($confirmation) {
             '' { return $true }
             'Y' { return $true }
@@ -456,14 +517,15 @@ function Test-ModuloReadiness {
         }
     }
 
-    if (-not (Test-Command 'docker')) {
-        Write-ReadinessResult $false 'Docker' 'no esta instalado o no esta en PATH' 'Elige [2] para instalar Docker Desktop.' | Out-Null
+    $dockerExecutable = Get-DockerClientExecutable
+    if (-not $dockerExecutable) {
+        Write-ReadinessResult $false 'Docker' 'no se encontro un cliente Docker instalado' 'Elige [2] para instalar Docker Desktop.' | Out-Null
         $isReady = $false
     } else {
-        $dockerVersion = (& docker --version 2>$null | Out-String).Trim()
+        $dockerVersion = (& $dockerExecutable --version 2>$null | Out-String).Trim()
         Write-ReadinessResult $true 'Docker' $dockerVersion '' | Out-Null
 
-        docker compose version *> $null
+        & $dockerExecutable compose version *> $null
         $composeReady = $LASTEXITCODE -eq 0
         Write-ReadinessResult $composeReady 'Docker Compose' 'comando docker compose disponible' 'Actualiza Docker Desktop o instala el plugin de Compose.' | Out-Null
         if (-not $composeReady) { $isReady = $false }
@@ -551,6 +613,7 @@ if ($InstallPrerequisites) {
 }
 
 if ($preparationChoice -eq 'Check') {
+    Refresh-ProcessToolPath
     if (-not (Test-ModuloReadiness)) { exit 1 }
     exit 0
 }
@@ -560,6 +623,9 @@ if ($preparationChoice -eq 'Stop') {
     exit 0
 }
 
+# Hace disponibles en esta misma terminal instalaciones existentes de Docker/Volta.
+Refresh-ProcessToolPath
+
 if ($preparationChoice -eq 'Docker') {
     if (-not (Confirm-PreparationChoice 'iniciar Docker y PostgreSQL, sin preparar backend ni frontend')) {
         Write-Host 'No se realizo ninguna accion.'
@@ -568,9 +634,9 @@ if ($preparationChoice -eq 'Docker') {
 
     Write-Host ''
     Write-Host '[Docker] Iniciando Docker y PostgreSQL...'
-    if (-not (Test-DockerDesktopInstalled)) {
+    if (-not (Test-DockerToolingAvailable)) {
         if (-not (Confirm-DockerDesktopInstallation)) {
-            Write-Host 'Docker Desktop es necesario para iniciar PostgreSQL con esta opcion. No se realizo ninguna accion.'
+            Write-Host 'Se necesita Docker con Compose para iniciar PostgreSQL con esta opcion. No se realizo ninguna accion.'
             exit 0
         }
         Install-DockerDesktop
