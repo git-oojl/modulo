@@ -31,9 +31,9 @@ En Windows, prepara un clon nuevo con el script del repositorio:
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-Elige `[1]` si ya tienes Volta, uv y Docker listos; elige `[2]` si falta alguna herramienta y quieres que el script la instale mediante WinGet. El script crea `backend/.env` si falta, instala los runtimes declarados, sincroniza los lockfiles, levanta PostgreSQL y aplica las migraciones. La opción `[3]` solo revisa el estado del equipo y del proyecto.
+Elige `[1]` si ya tienes Volta, uv y Docker listos; elige `[2]` para una **instalación completa: herramientas + entorno de Modulo**, instalando con WinGet lo que falte. El script crea `backend/.env` si falta, instala los runtimes declarados, sincroniza los lockfiles, levanta PostgreSQL y aplica las migraciones. La opción `[3]` solo revisa el estado del equipo y del proyecto. La opción `[4]` prepara la infraestructura: instala Docker Desktop con WinGet si falta (previa confirmación) e inicia Docker y PostgreSQL, sin tocar backend, frontend ni migraciones.
 
-Puedes ejecutarlo de nuevo en cualquier clon: no sobrescribe `.env`, no modifica los lockfiles y aplica las migraciones pendientes. Docker Desktop debe estar iniciado antes de usar `[1]`. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles de cada opción, incluida la configuración inicial de Docker Desktop.
+Puedes ejecutarlo de nuevo en cualquier clon: no sobrescribe `.env`, no modifica los lockfiles y aplica las migraciones pendientes. Tras preparar backend y frontend, la opción `[1]` pregunta si quieres iniciar Docker, PostgreSQL y las migraciones; la opción `[2]` lo hace automáticamente. Si el motor no responde, el preparador abre Docker Desktop y espera a que esté listo. La primera vez quizá debas aceptar sus términos o completar la configuración de WSL 2/virtualización. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles de cada opción.
 
 ![Menu del preparador de Windows](docs/screenshots/setup-menu.png)
 
