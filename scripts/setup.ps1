@@ -71,14 +71,63 @@ function Refresh-ProcessToolPath {
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
 }
 
+function Get-DockerDesktopExecutable {
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
+    )
+    return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
+}
+
+function Test-DockerDesktopInstalled {
+    return [bool](Get-DockerDesktopExecutable)
+}
+
+function Test-DockerDaemon {
+    if (-not (Test-Command 'docker')) { return $false }
+    docker info *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Start-DockerDaemon {
+    if (Test-DockerDaemon) { return $true }
+
+    $dockerDesktop = Get-DockerDesktopExecutable
+    if ($dockerDesktop) {
+        Write-Host 'Docker Desktop no estaba iniciado; se iniciara y se esperara a que el motor este listo...'
+        Start-Process -FilePath $dockerDesktop
+    } else {
+        $dockerService = Get-Service -Name 'docker' -ErrorAction SilentlyContinue
+        if ($dockerService -and $dockerService.Status -ne 'Running') {
+            try {
+                Start-Service -Name 'docker' -ErrorAction Stop
+                Write-Host 'Se inicio el servicio Docker.'
+            } catch {
+                Write-Warning 'No se pudo iniciar el servicio Docker. Si no usas Docker Desktop, inicia Docker Engine desde una consola con permisos de administrador.'
+            }
+        } else {
+            return $false
+        }
+    }
+
+    # Docker Desktop puede tardar en preparar WSL 2 despues de una instalacion o un reinicio.
+    for ($attempt = 1; $attempt -le 45; $attempt++) {
+        Start-Sleep -Seconds 2
+        if (Test-DockerDaemon) { return $true }
+    }
+    return $false
+}
+
 function Install-MissingPrerequisites {
     $packages = @(
-        @{ Command = 'volta'; Id = 'Volta.Volta'; Name = 'Volta' },
-        @{ Command = 'uv'; Id = 'astral-sh.uv'; Name = 'uv' },
-        @{ Command = 'docker'; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop' }
+        @{ IsInstalled = { Test-Command 'volta' }; Id = 'Volta.Volta'; Name = 'Volta' },
+        @{ IsInstalled = { Test-Command 'uv' }; Id = 'astral-sh.uv'; Name = 'uv' },
+        # El cliente docker tambien puede venir de Rancher, Podman u otro Engine. Para este
+        # proyecto [2] instala especificamente Docker Desktop, que incluye Compose y su backend.
+        @{ IsInstalled = { Test-DockerDesktopInstalled }; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop' }
     )
 
-    $missing = @($packages | Where-Object { -not (Test-Command $_.Command) })
+    $missing = @($packages | Where-Object { -not (& $_.IsInstalled) })
     if ($missing.Count -eq 0) {
         Write-Host 'Volta, uv y Docker ya estan disponibles; no se instalara ni actualizara nada.'
         return $false
@@ -94,21 +143,35 @@ function Install-MissingPrerequisites {
     return $true
 }
 
+function Install-DockerDesktop {
+    Require-Command 'winget' 'Instala Docker Desktop manualmente: https://docs.docker.com/get-docker/'
+    Write-Host 'Instalando Docker Desktop con WinGet...'
+    winget install --id 'Docker.DockerDesktop' --exact --source winget --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar Docker Desktop con WinGet.' }
+    Refresh-ProcessToolPath
+    if (-not (Test-DockerDesktopInstalled)) {
+        throw 'WinGet termino, pero no se encontro Docker Desktop. Cierra y abre una terminal nueva o completa el instalador antes de reintentar.'
+    }
+    Write-Host '[OK] Docker Desktop esta instalado.'
+}
+
 function Get-PreparationChoice {
     while ($true) {
         Write-Host ''
         Write-Host 'Preparacion de herramientas:'
         Write-Host '  [1] Preparar entorno de Modulo'
-        Write-Host '  [2] Instalar herramientas faltantes y configurar Volta/uv para este usuario'
+        Write-Host '  [2] Instalacion completa: herramientas + entorno de Modulo'
         Write-Host '  [3] Comprobar dependencias instaladas'
+        Write-Host '  [4] Iniciar solo Docker y PostgreSQL'
         Write-Host '  [0] Salir sin modificar el equipo'
-        $choice = (Read-Host 'Elige 1, 2, 3 o 0').Trim()
+        $choice = (Read-Host 'Elige 1, 2, 3, 4 o 0').Trim()
         switch ($choice) {
             '1' { return 'Prepare' }
             '2' { return 'Install' }
             '3' { return 'Check' }
+            '4' { return 'Docker' }
             '0' { return 'Stop' }
-            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3 o 0.' }
+            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4 o 0.' }
         }
     }
 }
@@ -118,6 +181,30 @@ function Confirm-PreparationChoice {
 
     while ($true) {
         $confirmation = (Read-Host "Elegiste: $Description. Confirmas? [Y/n]").Trim().ToUpperInvariant()
+        switch ($confirmation) {
+            '' { return $true }
+            'Y' { return $true }
+            'N' { return $false }
+            default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
+        }
+    }
+}
+
+function Confirm-DockerStartup {
+    while ($true) {
+        $confirmation = (Read-Host 'Backend y frontend estan listos. Iniciar Docker y PostgreSQL ahora? [Y/n]').Trim().ToUpperInvariant()
+        switch ($confirmation) {
+            '' { return $true }
+            'Y' { return $true }
+            'N' { return $false }
+            default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
+        }
+    }
+}
+
+function Confirm-DockerDesktopInstallation {
+    while ($true) {
+        $confirmation = (Read-Host 'Docker Desktop no esta instalado. Instalarlo ahora con WinGet? [Y/n]').Trim().ToUpperInvariant()
         switch ($confirmation) {
             '' { return $true }
             'Y' { return $true }
@@ -381,8 +468,7 @@ function Test-ModuloReadiness {
         Write-ReadinessResult $composeReady 'Docker Compose' 'comando docker compose disponible' 'Actualiza Docker Desktop o instala el plugin de Compose.' | Out-Null
         if (-not $composeReady) { $isReady = $false }
 
-        docker info *> $null
-        $daemonReady = $LASTEXITCODE -eq 0
+        $daemonReady = Test-DockerDaemon
         if ($daemonReady) {
             Write-ReadinessResult $true 'Motor Docker' 'Docker Desktop o Docker Engine responde' '' | Out-Null
         } else {
@@ -456,7 +542,7 @@ if ($InstallPrerequisites -and $SkipPrerequisiteInstallation) {
 
 if ($InstallPrerequisites) {
     $preparationChoice = 'Install'
-    $choiceDescription = 'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
+    $choiceDescription = 'instalar herramientas faltantes y preparar completamente Modulo'
 } elseif ($SkipPrerequisiteInstallation) {
     $preparationChoice = 'Prepare'
     $choiceDescription = 'preparar Modulo con las herramientas instaladas, sin cambiar la configuracion del usuario'
@@ -474,8 +560,43 @@ if ($preparationChoice -eq 'Stop') {
     exit 0
 }
 
+if ($preparationChoice -eq 'Docker') {
+    if (-not (Confirm-PreparationChoice 'iniciar Docker y PostgreSQL, sin preparar backend ni frontend')) {
+        Write-Host 'No se realizo ninguna accion.'
+        exit 0
+    }
+
+    Write-Host ''
+    Write-Host '[Docker] Iniciando Docker y PostgreSQL...'
+    if (-not (Test-DockerDesktopInstalled)) {
+        if (-not (Confirm-DockerDesktopInstallation)) {
+            Write-Host 'Docker Desktop es necesario para iniciar PostgreSQL con esta opcion. No se realizo ninguna accion.'
+            exit 0
+        }
+        Install-DockerDesktop
+    }
+    Refresh-ProcessToolPath
+    Require-Command 'docker' 'Instala Docker Desktop con Compose: https://docs.docker.com/get-docker/'
+    docker compose version
+    if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+    if (-not (Start-DockerDaemon)) {
+        throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
+    }
+
+    Push-Location $repositoryRoot
+    try {
+        docker compose -f $composeFile up -d --wait
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    } finally {
+        Pop-Location
+    }
+    Write-Host '[OK] Docker y PostgreSQL estan listos. No se modificaron backend, frontend ni migraciones.'
+    Write-Host 'Si el backend ya estaba preparado y necesitas aplicarlas: cd backend; uv run --frozen --env-file .env python manage.py migrate'
+    exit 0
+}
+
 $choiceDescription = if ($preparationChoice -eq 'Install') {
-    'instalar herramientas faltantes, configurar Volta/uv y preparar Modulo'
+    'instalar herramientas faltantes y preparar completamente Modulo'
 } else {
     'preparar el entorno de Modulo con las herramientas instaladas'
 }
@@ -499,38 +620,41 @@ switch ($preparationChoice) {
 
 Require-Command 'volta' 'Instala Volta: https://volta.sh/'
 Require-Command 'uv' 'Instala uv: https://docs.astral.sh/uv/'
-Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/get-docker/'
 
-docker compose version
-if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
-
-docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw 'Docker esta instalado, pero el motor no esta disponible. Inicia Docker Desktop o el servicio Docker y vuelve a ejecutar el script.' }
-
+Write-Host ''
+Write-Host '[1/3] Preparando backend...'
 $envFile = Join-Path $backendPath '.env'
 if (-not (Test-Path $envFile)) {
     Copy-Item (Join-Path $backendPath '.env.example') $envFile
-    Write-Host 'Creado backend/.env para desarrollo.'
+    Write-Host '[OK] Creado backend/.env para desarrollo.'
+} else {
+    Write-Host '[OK] backend/.env ya existe; no se modifica.'
 }
 
 Push-Location $backendPath
 try {
     $pythonVersion = (Get-Content (Join-Path $backendPath '.python-version') -Raw).Trim()
     if ([string]::IsNullOrWhiteSpace($pythonVersion)) { throw 'backend/.python-version no contiene una version de Python.' }
+    Write-Host "[... ] Asegurando Python $pythonVersion con uv..."
     uv python install $pythonVersion
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar Python con uv.' }
+    Write-Host '[... ] Sincronizando dependencias backend desde uv.lock...'
     uv sync --frozen --python $pythonVersion
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron sincronizar las dependencias Python.' }
+    Write-Host '[OK] Entorno backend sincronizado con uv.lock.'
 } finally {
     Pop-Location
 }
 
+Write-Host ''
+Write-Host '[2/3] Preparando frontend...'
 Push-Location $frontendPath
 try {
     # Volta ejecuta las versiones fijadas en frontend/package.json sin depender del orden de PATH.
     $package = Get-Content (Join-Path $frontendPath 'package.json') -Raw | ConvertFrom-Json
     $expectedNode = "v$($package.volta.node)"
     $expectedNpm = $package.volta.npm
+    Write-Host "[... ] Asegurando Node $expectedNode y npm $expectedNpm con Volta..."
     volta fetch "node@$($package.volta.node)" "npm@$expectedNpm"
     if ($LASTEXITCODE -ne 0) { throw 'Volta no pudo descargar las versiones declaradas de Node.js y npm.' }
     $nodeVersion = (volta run --node $package.volta.node --npm $expectedNpm -- node --version).Trim()
@@ -540,26 +664,51 @@ try {
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
         throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json."
     }
-    volta run --node $package.volta.node --npm $expectedNpm -- npm ci
+    Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez puede tardar mientras descarga y descomprime paquetes...'
+    volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
+    Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
 } finally {
     Pop-Location
 }
 
+if ($preparationChoice -eq 'Prepare' -and -not (Confirm-DockerStartup)) {
+    Write-Host ''
+    Write-Host '[OK] Backend y frontend estan preparados. Se omitieron Docker, PostgreSQL y las migraciones por eleccion.'
+    Write-Host 'Cuando quieras iniciar solo Docker y PostgreSQL, vuelve a ejecutar el script y elige [4].'
+    Write-Host 'Las migraciones quedan pendientes: cd backend; uv run --frozen --env-file .env python manage.py migrate'
+    exit 0
+}
+
+Write-Host ''
+Write-Host '[3/3] Preparando PostgreSQL y migraciones...'
+Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/get-docker/'
+docker compose version
+if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+
+if (-not (Start-DockerDaemon)) {
+    throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
+}
+
 Push-Location $repositoryRoot
 try {
+    Write-Host '[... ] Iniciando PostgreSQL y esperando a que este saludable...'
     docker compose -f $composeFile up -d --wait
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    Write-Host '[OK] PostgreSQL esta listo.'
 } finally {
     Pop-Location
 }
 
 Push-Location $backendPath
 try {
+    Write-Host '[... ] Aplicando migraciones Django...'
     uv run --frozen --env-file .env python manage.py migrate
     if ($LASTEXITCODE -ne 0) { throw 'Fallo la aplicacion de migraciones.' }
+    Write-Host '[... ] Ejecutando validacion Django...'
     uv run --frozen --env-file .env python manage.py check
     if ($LASTEXITCODE -ne 0) { throw 'Fallo la validacion de Django.' }
+    Write-Host '[OK] Migraciones y validacion Django completadas.'
 } finally {
     Pop-Location
 }
