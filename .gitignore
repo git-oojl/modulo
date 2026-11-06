@@ -1,6 +1,10 @@
 # Operating systems and editors
 .DS_Store
 Thumbs.db
+Desktop.ini
+.idea/
+.vs/
+.history/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
@@ -10,20 +14,43 @@ frontend/node_modules/
 frontend/.angular/
 frontend/dist/
 frontend/coverage/
+frontend/.cache/
+frontend/.eslintcache
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
 
 # Backend
 backend/.venv/
 backend/__pycache__/
 backend/**/__pycache__/
+backend/**/*.py[cod]
+backend/*$py.class
 backend/*.sqlite3
+backend/*.sqlite3-journal
 backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.hypothesis/
+backend/.mypy_cache/
+backend/.nox/
+backend/.pytype/
+backend/.ruff_cache/
+backend/.tox/
+backend/media/
+backend/staticfiles/
 
 # Local configuration and secrets
-.env
-.env.*
-!.env.example
-backend/.env
-frontend/.env
+**/.env
+**/.env.*
+!**/.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
 
 # Python tooling
 .ruff_cache/
