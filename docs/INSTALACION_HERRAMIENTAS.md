@@ -22,7 +22,7 @@ La instalación inicial de Docker Desktop puede pedir que aceptes sus términos 
 
 El menú muestra las acciones disponibles:
 
-![Menu del preparador](screenshots/setup-menu.png)
+![Menu del preparador](screenshots/setup-menu-current.png)
 
 Este informe de `[3]` muestra un entorno listo para desarrollar. Las opciones de estado de Windows pueden aparecer como informativas cuando PowerShell no está elevado.
 

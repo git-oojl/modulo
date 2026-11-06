@@ -35,7 +35,7 @@ Funciona con Windows PowerShell 5.1 y PowerShell 7; si la política local lo per
 
 Usa `[1]` para preparar un entorno ya equipado, `[2]` para una instalación completa, `[3]` para comprobar el estado, `[4]` para Docker/PostgreSQL (con migraciones opcionales) y `[5]` para solo migraciones. El primer `npm ci` puede tardar; las repeticiones omiten esa instalación si el lockfile y las dependencias siguen válidos. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles y diagnósticos.
 
-![Menu del preparador de Windows](docs/screenshots/setup-menu.png)
+![Menu del preparador de Windows](docs/screenshots/setup-menu-current.png)
 
 La [guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) también muestra el informe de comprobación `[3]`.
 
