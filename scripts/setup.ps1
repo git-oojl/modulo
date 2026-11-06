@@ -109,7 +109,15 @@ function Refresh-ProcessToolPath {
 
 function Get-DockerDesktopExecutable {
     $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $dockerClient = Get-DockerClientExecutable
+    $dockerDesktopAlongsideClient = $null
+    if ($dockerClient) {
+        $resourcesDirectory = Split-Path -Parent (Split-Path -Parent $dockerClient)
+        $dockerInstallDirectory = Split-Path -Parent $resourcesDirectory
+        $dockerDesktopAlongsideClient = Join-Path $dockerInstallDirectory 'Docker Desktop.exe'
+    }
     $candidates = @(
+        $dockerDesktopAlongsideClient,
         (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
         $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\Docker Desktop.exe' }),
         (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\Docker Desktop.exe'),
@@ -194,7 +202,12 @@ function Start-DockerDaemon {
     $dockerDesktop = Get-DockerDesktopExecutable
     if ($dockerDesktop) {
         Write-Host 'Docker Desktop no estaba iniciado; se iniciara y se esperara a que el motor este listo...'
-        Start-Process -FilePath $dockerDesktop
+        try {
+            Start-Process -FilePath $dockerDesktop -ErrorAction Stop
+        } catch {
+            Write-Warning "No se pudo abrir Docker Desktop en $dockerDesktop. Abre Docker Desktop manualmente y confirma que termina de iniciar."
+            return $false
+        }
     } else {
         $dockerService = Get-Service -Name 'docker' -ErrorAction SilentlyContinue
         if ($dockerService -and $dockerService.Status -ne 'Running') {
@@ -205,6 +218,7 @@ function Start-DockerDaemon {
                 Write-Warning 'No se pudo iniciar el servicio Docker. Si no usas Docker Desktop, inicia Docker Engine desde una consola con permisos de administrador.'
             }
         } else {
+            Write-Warning 'No se encontro el ejecutable de Docker Desktop ni un servicio Docker iniciable. Abre Docker Desktop manualmente; si funciona, informa su ruta de instalacion.'
             return $false
         }
     }
@@ -214,6 +228,7 @@ function Start-DockerDaemon {
         Start-Sleep -Seconds 2
         if (Test-DockerDaemon) { return $true }
     }
+    Write-Warning 'Docker Desktop se solicito, pero el motor no respondio en 90 segundos. Abre Docker Desktop manualmente para completar su configuracion inicial, aceptar sus terminos o ver el error que muestra la aplicacion.'
     return $false
 }
 
@@ -785,8 +800,8 @@ try {
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
         throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json."
     }
-    Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez puede tardar mientras descarga y descomprime paquetes...'
-    volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund
+    Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez descarga y descomprime cientos de paquetes. Las ejecuciones posteriores reutilizan la cache local de npm.'
+    volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund --prefer-offline
     if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
     Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
 } finally {
