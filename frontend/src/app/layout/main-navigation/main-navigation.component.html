@@ -1,40 +1,39 @@
 <aside class="sidebar">
-  <!-- Logo -->
   <div class="sidebar__brand">
-    <span>MODULO</span>
+    <span class="brand-full">MODULO</span>
+    <span class="brand-short">M</span> <!-- Para cuando esté encogido -->
   </div>
 
-  <!-- Links de Navegación -->
   <nav class="sidebar__nav" aria-label="Navegación principal">
     @for (item of menuItems; track item.path) {
       <a 
         [routerLink]="item.path" 
         routerLinkActive="sidebar__link--active" 
-        [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+        [routerLinkActiveOptions]="{ exact: item.path === '/app/dashboard' }"
         class="sidebar__link"
+        [title]="item.label"
       >
-        {{ item.label }}
+        <mat-icon>{{ item.icon }}</mat-icon>
+        <span class="link-text">{{ item.label }}</span>
       </a>
     }
   </nav>
 
-  <!-- Footer: Logout y Perfil -->
   <div class="sidebar__footer">
-    <button class="sidebar__logout" (click)="logout()">
+    <button class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
       <mat-icon>logout</mat-icon>
-      <span>Logout</span>
+      <span class="link-text">Logout</span>
     </button>
 
     <div class="sidebar__profile">
-      <!-- Placeholder para la foto de perfil (puedes usar una imagen real luego) -->
       <div class="sidebar__avatar">
         <img src="https://i.pravatar.cc/150?img=47" alt="Avatar" />
       </div>
-      <div class="sidebar__user-info">
+      <div class="sidebar__user-info link-text">
         <strong>Ana Barajas</strong>
         <span>Mirar perfil</span>
       </div>
-      <mat-icon class="sidebar__more-icon">more_vert</mat-icon>
+      <mat-icon class="sidebar__more-icon link-text">more_vert</mat-icon>
     </div>
   </div>
 </aside>

@@ -13,11 +13,15 @@
   display: flex;
   flex-direction: column;
   gap: 1.6rem;
-  padding: 4rem;
+  padding: 2rem 3rem; /* Padding equilibrado */
   background-color: var(--bg-color);
   min-height: 100%;
   color: var(--text-main);
-  font-family: 'Poppins';
+  font-family: 'Poppins', sans-serif;
+  max-width: 1400px; /* Evita que se estire de más en pantallas 4K */
+  margin: 0 auto;    /* Centra el dashboard en el espacio restante */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .grid-main {

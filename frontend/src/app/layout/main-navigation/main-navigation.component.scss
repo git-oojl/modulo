@@ -1,20 +1,16 @@
-/* Contenedor principal del Sidebar */
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 250px;
-  flex-shrink: 0;
+  width: 100%; /* Hereda el ancho de .sidebar-container */
   height: 100vh;
-  background-color: #000000ee; /* Fondo oscuro casi negro */
+  background-color: #000000ee;
   color: #fff;
   padding: 1.8rem 1rem;
   box-sizing: border-box;
-  position: fixed;
-  top: 0;
-  font-family: 'Poppins';
+  font-family: 'Poppins', sans-serif;
+  overflow-x: hidden; /* Evita scroll horizontal en modo encogido */
 }
 
-/* Logo */
 .sidebar__brand {
   font-size: 1.5rem;
   font-weight: 800;
@@ -22,39 +18,49 @@
   text-align: center;
   margin-bottom: 2rem;
   color: #fff;
+  white-space: nowrap;
+  
+  .brand-short { display: none; }
 }
 
-/* Navegación */
 .sidebar__nav {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  flex: 1; /* Empuja el footer hacia abajo */
+  flex: 1;
 }
 
 .sidebar__link {
-  color: #b0b0b0; /* Texto gris claro no activo */
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #b0b0b0;
   text-decoration: none;
   padding: 0.8rem 1rem;
   border-radius: 0.5rem;
   font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+
+  mat-icon {
+    font-size: 1.3rem;
+    width: 1.3rem;
+    height: 1.3rem;
+  }
 
   &:hover {
     color: #fff;
     background-color: #db9ece;
   }
 
-  /* Estado Activo */
   &.sidebar__link--active {
-    background-color: #98578b; /* Color Lila/Rosa */
+    background-color: #98578b;
     color: #fff;
     font-weight: 600;
   }
 }
 
-/* Footer (Logout y Perfil) */
 .sidebar__footer {
   display: flex;
   flex-direction: column;
@@ -62,12 +68,11 @@
   margin-top: auto;
 }
 
-/* Botón de Logout */
 .sidebar__logout {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  background-color: var(--modulo-magenta-800, #790069); /* Color morado oscuro */
+  gap: 1rem;
+  background-color: var(--modulo-magenta-800, #790069);
   color: #fff;
   border: none;
   padding: 0.8rem 1rem;
@@ -77,11 +82,12 @@
   font-weight: 500;
   width: 100%;
   transition: background 0.2s;
+  white-space: nowrap;
 
   &:hover {
     background-color: var(--modulo-magenta-700, #790069);
   }
-
+  
   mat-icon {
     font-size: 1.2rem;
     width: 1.2rem;
@@ -89,7 +95,6 @@
   }
 }
 
-/* Perfil de Usuario */
 .sidebar__profile {
   display: flex;
   align-items: center;
@@ -103,6 +108,7 @@
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
+  flex-shrink: 0; /* Evita que se aplaste en modo encogido */
   
   img {
     width: 100%;
@@ -115,19 +121,62 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  white-space: nowrap;
 
-  strong {
-    font-size: 0.9rem;
-    color: #fff;
-  }
-
-  span {
-    font-size: 0.75rem;
-    color: #888;
-  }
+  strong { font-size: 0.9rem; color: #fff; }
+  span { font-size: 0.75rem; color: #888; }
 }
 
 .sidebar__more-icon {
   color: #888;
   cursor: pointer;
+}
+
+
+/* =========================================
+   MEDIA QUERIES (Modo encogido - Solo iconos)
+   ========================================= */
+@media (max-width: 992px) {
+  .sidebar {
+    padding: 1.8rem 0.5rem;
+    align-items: center;
+  }
+
+  /* Ocultar textos y logo largo */
+  .link-text, .brand-full {
+    display: none !important;
+  }
+
+  /* Mostrar la "M" */
+  .brand-short {
+    display: block !important;
+  }
+
+  /* Ajustar botones a cuadrados perfectos */
+  .sidebar__link {
+    justify-content: center;
+    padding: 0.8rem 0;
+    width: 45px;
+    height: 45px;
+    gap: 0;
+  }
+
+  .sidebar__logout {
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    padding: 0;
+    gap: 0;
+  }
+
+  /* Ocultar info del perfil y solo dejar el avatar */
+  .sidebar__profile {
+    justify-content: center;
+    border-top: none;
+    padding-top: 0;
+  }
+  
+  .sidebar__user-info, .sidebar__more-icon {
+    display: none !important;
+  }
 }

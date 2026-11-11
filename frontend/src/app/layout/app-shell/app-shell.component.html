@@ -1,5 +1,7 @@
-<app-main-navigation />
-
-<main class="app-shell__content" id="contenido-principal">
-  <router-outlet />
-</main>
+<div class="app-layout">
+  <app-main-navigation class="sidebar-container"></app-main-navigation>
+  
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>
