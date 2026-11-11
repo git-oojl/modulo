@@ -1,11 +1,13 @@
 .app-shell__content {
-  margin: 0 auto;
-  max-width: 72rem;
-  padding: 2rem 1.25rem 3rem;
-}
-
-@media (min-width: 48rem) {
-  .app-shell__content {
-    padding-inline: 2rem;
-  }
+  width: 100%;
+  max-width: 100%; /* Elimina cualquier límite de ancho */
+  margin: 0;
+  padding: 0; /* Elimina el padding que causa el recuadro */
+  display: flex;
+  flex-direction: column;
+  
+  /* Ajusta los 60px (o 70px) dependiendo de qué tan alta sea tu barra morada superior */
+  height: calc(100vh - 60px); 
+  
+  overflow: hidden; /* Evita que toda la página haga scroll */
 }
