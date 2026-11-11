@@ -1,18 +1,40 @@
-<mat-toolbar class="main-navigation" aria-label="Navegación principal">
-  <a class="main-navigation__brand" routerLink="/dashboard" aria-label="Modulo, ir al panel">
-    <span class="main-navigation__mark" aria-hidden="true">M</span>
-    <span>Modulo</span>
-  </a>
+<aside class="sidebar">
+  <!-- Logo -->
+  <div class="sidebar__brand">
+    <span>MODULO</span>
+  </div>
 
-  <nav class="main-navigation__links" aria-label="Secciones internas">
-    <a
-      routerLink="/dashboard"
-      routerLinkActive="main-navigation__link--active"
-      [routerLinkActiveOptions]="{ exact: true }"
-      >Panel</a
-    >
-    <a routerLink="/contactos" routerLinkActive="main-navigation__link--active">Contactos</a>
-    <a routerLink="/propiedades" routerLinkActive="main-navigation__link--active">Propiedades</a>
-    <a routerLink="/citas" routerLinkActive="main-navigation__link--active">Citas</a>
+  <!-- Links de Navegación -->
+  <nav class="sidebar__nav" aria-label="Navegación principal">
+    @for (item of menuItems; track item.path) {
+      <a 
+        [routerLink]="item.path" 
+        routerLinkActive="sidebar__link--active" 
+        [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+        class="sidebar__link"
+      >
+        {{ item.label }}
+      </a>
+    }
   </nav>
-</mat-toolbar>
+
+  <!-- Footer: Logout y Perfil -->
+  <div class="sidebar__footer">
+    <button class="sidebar__logout" (click)="logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Logout</span>
+    </button>
+
+    <div class="sidebar__profile">
+      <!-- Placeholder para la foto de perfil (puedes usar una imagen real luego) -->
+      <div class="sidebar__avatar">
+        <img src="https://i.pravatar.cc/150?img=47" alt="Avatar" />
+      </div>
+      <div class="sidebar__user-info">
+        <strong>Ana Barajas</strong>
+        <span>Mirar perfil</span>
+      </div>
+      <mat-icon class="sidebar__more-icon">more_vert</mat-icon>
+    </div>
+  </div>
+</aside>
