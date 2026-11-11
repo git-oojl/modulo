@@ -8,6 +8,9 @@ $ErrorActionPreference = 'Stop'
 # uv y otros comandos nativos pueden escribir estado normal en stderr.
 # Sus codigos de salida se comprueban de forma explicita abajo.
 $PSNativeCommandUseErrorActionPreference = $false
+if ($PSVersionTable.PSVersion.Major -lt 5) {
+    throw 'scripts/setup.ps1 requiere Windows PowerShell 5.1 o PowerShell 7 o posterior.'
+}
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $frontendPath = Join-Path $repositoryRoot 'frontend'
 $backendPath = Join-Path $repositoryRoot 'backend'
@@ -23,6 +26,33 @@ function Require-Command {
     if (-not (Test-Command $Name)) {
         throw "$Name no esta disponible. $Hint"
     }
+}
+
+function Get-WinGetExecutable {
+    # Invocar el alias de WindowsApps cuando App Installer falta abre el dialogo
+    # generico de "Selecciona una aplicacion". Se prefiere el ejecutable real.
+    if (Test-Command 'Get-AppxPackage') {
+        $appInstaller = @(Get-AppxPackage -Name 'Microsoft.DesktopAppInstaller' -ErrorAction SilentlyContinue | Sort-Object Version -Descending)
+        foreach ($package in $appInstaller) {
+            if (-not $package.InstallLocation) { continue }
+            $candidate = Join-Path $package.InstallLocation 'winget.exe'
+            if (Test-Path $candidate) { return $candidate }
+        }
+    }
+
+    $command = Get-Command 'winget.exe' -CommandType Application -ErrorAction SilentlyContinue
+    if ($command -and $command.Source -and (Test-Path $command.Source) -and $command.Source -notlike '*\Microsoft\WindowsApps\*') {
+        return $command.Source
+    }
+    return $null
+}
+
+function Require-WinGet {
+    $winget = Get-WinGetExecutable
+    if (-not $winget) {
+        throw 'WinGet no esta disponible o el alias de WindowsApps esta roto. Instala o actualiza Microsoft App Installer desde Microsoft Store y vuelve a ejecutar el script; tambien puedes instalar las herramientas manualmente segun docs/INSTALACION_HERRAMIENTAS.md.'
+    }
+    return $winget
 }
 
 function Add-UserPathEntry {
@@ -53,6 +83,37 @@ function Configure-ManagedToolchains {
     Write-Host 'Volta queda al inicio del PATH de usuario y uv usara Python administrado por uv en nuevas terminales.'
 }
 
+function Get-FrontendLockHash {
+    $lockFile = Join-Path $frontendPath 'package-lock.json'
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    $stream = [System.IO.File]::OpenRead($lockFile)
+    try {
+        return ([System.BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '')
+    } finally {
+        $stream.Dispose()
+        $sha256.Dispose()
+    }
+}
+
+function Test-FrontendDependenciesCurrent {
+    param([string]$LockHash)
+
+    $nodeModulesPath = Join-Path $frontendPath 'node_modules'
+    $markerFile = Join-Path $nodeModulesPath '.modulo-package-lock.sha256'
+    if (-not (Test-Path $nodeModulesPath) -or -not (Test-Path $markerFile)) { return $false }
+    if ((Get-Content -LiteralPath $markerFile -Raw).Trim() -ne $LockHash) { return $false }
+
+    npm ls --depth=0 --ignore-scripts *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Write-FrontendLockMarker {
+    param([string]$LockHash)
+
+    $markerFile = Join-Path $frontendPath 'node_modules\.modulo-package-lock.sha256'
+    Set-Content -LiteralPath $markerFile -Value $LockHash -NoNewline
+}
+
 function Add-ProcessPathEntry {
     param([string]$Entry)
 
@@ -69,24 +130,101 @@ function Refresh-ProcessToolPath {
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Volta')
     Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Volta\bin')
     Add-ProcessPathEntry (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin')
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\resources\bin')
+    Add-ProcessPathEntry (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\resources\bin')
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    if ($programFilesX86) {
+        Add-ProcessPathEntry (Join-Path $programFilesX86 'Docker\Docker\resources\bin')
+    }
 }
 
 function Get-DockerDesktopExecutable {
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $dockerClient = Get-DockerClientExecutable
+    $dockerDesktopAlongsideClient = $null
+    if ($dockerClient) {
+        $resourcesDirectory = Split-Path -Parent (Split-Path -Parent $dockerClient)
+        $dockerInstallDirectory = Split-Path -Parent $resourcesDirectory
+        $dockerDesktopAlongsideClient = Join-Path $dockerInstallDirectory 'Docker Desktop.exe'
+    }
     $candidates = @(
+        $dockerDesktopAlongsideClient,
         (Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'),
+        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\Docker Desktop.exe' }),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker Desktop.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\Docker Desktop.exe'),
         (Join-Path $env:LOCALAPPDATA 'Docker\Docker Desktop.exe')
     )
     return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
 }
 
-function Test-DockerDesktopInstalled {
-    return [bool](Get-DockerDesktopExecutable)
+function Get-DockerClientExecutable {
+    $dockerCommand = Get-Command 'docker.exe' -CommandType Application -ErrorAction SilentlyContinue
+    if ($dockerCommand -and $dockerCommand.Source -and (Test-Path $dockerCommand.Source)) {
+        return $dockerCommand.Source
+    }
+
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $candidates = @(
+        (Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin\docker.exe'),
+        $(if ($programFilesX86) { Join-Path $programFilesX86 'Docker\Docker\resources\bin\docker.exe' }),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker\Docker\resources\bin\docker.exe'),
+        (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\resources\bin\docker.exe')
+    )
+    return @($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)
+}
+
+function Test-DockerInstalled {
+    return [bool](Get-DockerClientExecutable)
+}
+
+function Invoke-DockerCommand {
+    param([string[]]$Arguments)
+
+    $docker = Get-DockerClientExecutable
+    if (-not $docker) {
+        return [PSCustomObject]@{ ExitCode = 1; Output = 'No se encontro el cliente Docker.' }
+    }
+
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $docker
+    $startInfo.Arguments = (($Arguments | ForEach-Object {
+        if ($_ -match '[\s"]') { '"' + $_.Replace('"', '\"') + '"' } else { $_ }
+    }) -join ' ')
+    $startInfo.UseShellExecute = $false
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    [void]$process.Start()
+    $standardOutput = $process.StandardOutput.ReadToEnd()
+    $standardError = $process.StandardError.ReadToEnd()
+    $process.WaitForExit()
+    return [PSCustomObject]@{
+        ExitCode = $process.ExitCode
+        Output = "$standardOutput$standardError".Trim()
+    }
+}
+
+function Write-DockerCommandOutput {
+    param($Result)
+    if ($Result.Output) { Write-Host $Result.Output }
+}
+
+function Test-DockerComposeAvailable {
+    $result = Invoke-DockerCommand -Arguments @('compose', 'version')
+    return $result.ExitCode -eq 0
+}
+
+function Test-DockerToolingAvailable {
+    return (Test-DockerInstalled) -and (Test-DockerComposeAvailable)
 }
 
 function Test-DockerDaemon {
-    if (-not (Test-Command 'docker')) { return $false }
-    docker info *> $null
-    return $LASTEXITCODE -eq 0
+    $result = Invoke-DockerCommand -Arguments @('info')
+    return $result.ExitCode -eq 0
 }
 
 function Start-DockerDaemon {
@@ -95,7 +233,12 @@ function Start-DockerDaemon {
     $dockerDesktop = Get-DockerDesktopExecutable
     if ($dockerDesktop) {
         Write-Host 'Docker Desktop no estaba iniciado; se iniciara y se esperara a que el motor este listo...'
-        Start-Process -FilePath $dockerDesktop
+        try {
+            Start-Process -FilePath $dockerDesktop -ErrorAction Stop
+        } catch {
+            Write-Warning "No se pudo abrir Docker Desktop en $dockerDesktop. Abre Docker Desktop manualmente y confirma que termina de iniciar."
+            return $false
+        }
     } else {
         $dockerService = Get-Service -Name 'docker' -ErrorAction SilentlyContinue
         if ($dockerService -and $dockerService.Status -ne 'Running') {
@@ -106,6 +249,7 @@ function Start-DockerDaemon {
                 Write-Warning 'No se pudo iniciar el servicio Docker. Si no usas Docker Desktop, inicia Docker Engine desde una consola con permisos de administrador.'
             }
         } else {
+            Write-Warning 'No se encontro el ejecutable de Docker Desktop ni un servicio Docker iniciable. Abre Docker Desktop manualmente; si funciona, informa su ruta de instalacion.'
             return $false
         }
     }
@@ -115,6 +259,7 @@ function Start-DockerDaemon {
         Start-Sleep -Seconds 2
         if (Test-DockerDaemon) { return $true }
     }
+    Write-Warning 'Docker Desktop se solicito, pero el motor no respondio en 90 segundos. Abre Docker Desktop manualmente para completar su configuracion inicial, aceptar sus terminos o ver el error que muestra la aplicacion.'
     return $false
 }
 
@@ -122,9 +267,8 @@ function Install-MissingPrerequisites {
     $packages = @(
         @{ IsInstalled = { Test-Command 'volta' }; Id = 'Volta.Volta'; Name = 'Volta' },
         @{ IsInstalled = { Test-Command 'uv' }; Id = 'astral-sh.uv'; Name = 'uv' },
-        # El cliente docker tambien puede venir de Rancher, Podman u otro Engine. Para este
-        # proyecto [2] instala especificamente Docker Desktop, que incluye Compose y su backend.
-        @{ IsInstalled = { Test-DockerDesktopInstalled }; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop' }
+        # Docker puede venir de Desktop, MSI u otro Engine, pero el proyecto requiere Compose.
+        @{ IsInstalled = { Test-DockerToolingAvailable }; Id = 'Docker.DockerDesktop'; Name = 'Docker Desktop con Compose' }
     )
 
     $missing = @($packages | Where-Object { -not (& $_.IsInstalled) })
@@ -133,10 +277,10 @@ function Install-MissingPrerequisites {
         return $false
     }
 
-    Require-Command 'winget' 'Instala las herramientas manualmente: docs/INSTALACION_HERRAMIENTAS.md'
+    $winget = Require-WinGet
     foreach ($package in $missing) {
         Write-Host "Instalando $($package.Name) con WinGet..."
-        winget install --id $package.Id --exact --source winget --accept-source-agreements --accept-package-agreements
+        & $winget install --id $package.Id --exact --source winget --accept-source-agreements --accept-package-agreements
         if ($LASTEXITCODE -ne 0) { throw "No se pudo instalar $($package.Name) con WinGet." }
     }
 
@@ -144,13 +288,13 @@ function Install-MissingPrerequisites {
 }
 
 function Install-DockerDesktop {
-    Require-Command 'winget' 'Instala Docker Desktop manualmente: https://docs.docker.com/get-docker/'
+    $winget = Require-WinGet
     Write-Host 'Instalando Docker Desktop con WinGet...'
-    winget install --id 'Docker.DockerDesktop' --exact --source winget --accept-source-agreements --accept-package-agreements
+    & $winget install --id 'Docker.DockerDesktop' --exact --source winget --accept-source-agreements --accept-package-agreements
     if ($LASTEXITCODE -ne 0) { throw 'No se pudo instalar Docker Desktop con WinGet.' }
     Refresh-ProcessToolPath
-    if (-not (Test-DockerDesktopInstalled)) {
-        throw 'WinGet termino, pero no se encontro Docker Desktop. Cierra y abre una terminal nueva o completa el instalador antes de reintentar.'
+    if (-not (Test-DockerToolingAvailable)) {
+        throw 'WinGet termino, pero no se encontro Docker con Compose. Cierra y abre una terminal nueva o completa el instalador antes de reintentar.'
     }
     Write-Host '[OK] Docker Desktop esta instalado.'
 }
@@ -163,15 +307,17 @@ function Get-PreparationChoice {
         Write-Host '  [2] Instalacion completa: herramientas + entorno de Modulo'
         Write-Host '  [3] Comprobar dependencias instaladas'
         Write-Host '  [4] Iniciar solo Docker y PostgreSQL'
+        Write-Host '  [5] Aplicar solo migraciones Django'
         Write-Host '  [0] Salir sin modificar el equipo'
-        $choice = (Read-Host 'Elige 1, 2, 3, 4 o 0').Trim()
+        $choice = (Read-Host 'Elige 1, 2, 3, 4, 5 o 0').Trim()
         switch ($choice) {
             '1' { return 'Prepare' }
             '2' { return 'Install' }
             '3' { return 'Check' }
             '4' { return 'Docker' }
+            '5' { return 'Migrate' }
             '0' { return 'Stop' }
-            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4 o 0.' }
+            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4, 5 o 0.' }
         }
     }
 }
@@ -204,7 +350,7 @@ function Confirm-DockerStartup {
 
 function Confirm-DockerDesktopInstallation {
     while ($true) {
-        $confirmation = (Read-Host 'Docker Desktop no esta instalado. Instalarlo ahora con WinGet? [Y/n]').Trim().ToUpperInvariant()
+        $confirmation = (Read-Host 'Docker con Compose no esta disponible. Instalar Docker Desktop ahora con WinGet? [Y/n]').Trim().ToUpperInvariant()
         switch ($confirmation) {
             '' { return $true }
             'Y' { return $true }
@@ -212,6 +358,39 @@ function Confirm-DockerDesktopInstallation {
             default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
         }
     }
+}
+
+function Confirm-MigrationsAfterDocker {
+    while ($true) {
+        $confirmation = (Read-Host 'PostgreSQL esta listo. Aplicar tambien las migraciones Django? [y/N]').Trim().ToUpperInvariant()
+        switch ($confirmation) {
+            '' { return $false }
+            'Y' { return $true }
+            'N' { return $false }
+            default { Write-Warning 'Respuesta no valida. Escribe Y o N.' }
+        }
+    }
+}
+
+function Invoke-ModuloMigrations {
+    Require-Command 'uv' 'Instala uv o prepara el backend con la opcion [1].'
+    $envFile = Join-Path $backendPath '.env'
+    if (-not (Test-Path $envFile)) {
+        throw 'Falta backend/.env. Elige [1] para crear y preparar el entorno backend antes de aplicar migraciones.'
+    }
+
+    Push-Location $backendPath
+    try {
+        Write-Host '[Migraciones] Aplicando migraciones Django...'
+        uv run --frozen --no-sync --env-file .env python manage.py migrate
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron aplicar las migraciones. Elige [1] si falta preparar el entorno backend.' }
+        Write-Host '[Migraciones] Ejecutando validacion Django...'
+        uv run --frozen --no-sync --env-file .env python manage.py check
+        if ($LASTEXITCODE -ne 0) { throw 'Fallo la validacion Django despues de las migraciones.' }
+    } finally {
+        Pop-Location
+    }
+    Write-Host '[OK] Migraciones Django aplicadas.'
 }
 
 function Write-ReadinessResult {
@@ -282,6 +461,7 @@ function Invoke-UvReadOnly {
     $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
     $startInfo.FileName = $uvExecutable
     $startInfo.Arguments = $Arguments
+    $startInfo.WorkingDirectory = (Get-Location).Path
     $startInfo.UseShellExecute = $false
     $startInfo.RedirectStandardOutput = $true
     $startInfo.RedirectStandardError = $true
@@ -298,11 +478,10 @@ function Invoke-UvReadOnly {
     }
 }
 
-function Test-UvEnvironment {
+function Get-UvEnvironmentStatus {
     param([string]$PythonVersion)
 
-    $result = Invoke-UvReadOnly "sync --frozen --check --python $PythonVersion"
-    return $result.ExitCode -eq 0
+    return Invoke-UvReadOnly "sync --frozen --check --python $PythonVersion"
 }
 
 function Test-ModuloReadiness {
@@ -408,9 +587,23 @@ function Test-ModuloReadiness {
 
         Push-Location $backendPath
         try {
-            $backendReady = Test-UvEnvironment $pythonVersion
-            $backendDetail = if ($backendReady) { 'uv.lock esta sincronizado con el entorno local' } else { 'falta .venv o no coincide con uv.lock' }
-            Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail 'Elige [1] para ejecutar uv sync --frozen.' | Out-Null
+            $backendSyncResult = Get-UvEnvironmentStatus $pythonVersion
+            $backendReady = $backendSyncResult.ExitCode -eq 0
+            if ($backendReady) {
+                $backendDetail = 'uv.lock esta sincronizado con el entorno local'
+                $backendFix = ''
+            } elseif ($backendSyncResult.Output -match '(?i)(unexpected argument|unrecognized arguments|unknown option|--check)') {
+                $backendDetail = 'la version instalada de uv no admite la comprobacion de sincronizacion'
+                $backendFix = 'Actualiza uv y vuelve a ejecutar [3].'
+            } else {
+                $backendDetail = 'falta .venv o no coincide con uv.lock'
+                $backendFix = 'Elige [1] para ejecutar uv sync --frozen.'
+            }
+            Write-ReadinessResult $backendReady 'Dependencias backend' $backendDetail $backendFix | Out-Null
+            if (-not $backendReady -and $backendSyncResult.Output) {
+                $uvDetail = ($backendSyncResult.Output -replace '[\r\n]+', ' ').Trim()
+                Write-Host "     Detalle de uv: $uvDetail"
+            }
             if (-not $backendReady) { $isReady = $false }
         } finally {
             Pop-Location
@@ -456,15 +649,17 @@ function Test-ModuloReadiness {
         }
     }
 
-    if (-not (Test-Command 'docker')) {
-        Write-ReadinessResult $false 'Docker' 'no esta instalado o no esta en PATH' 'Elige [2] para instalar Docker Desktop.' | Out-Null
+    $dockerExecutable = Get-DockerClientExecutable
+    if (-not $dockerExecutable) {
+        Write-ReadinessResult $false 'Docker' 'no se encontro un cliente Docker instalado' 'Elige [2] para instalar Docker Desktop.' | Out-Null
         $isReady = $false
     } else {
-        $dockerVersion = (& docker --version 2>$null | Out-String).Trim()
+        $dockerVersionResult = Invoke-DockerCommand -Arguments @('--version')
+        $dockerVersion = $dockerVersionResult.Output
         Write-ReadinessResult $true 'Docker' $dockerVersion '' | Out-Null
 
-        docker compose version *> $null
-        $composeReady = $LASTEXITCODE -eq 0
+        $composeResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+        $composeReady = $composeResult.ExitCode -eq 0
         Write-ReadinessResult $composeReady 'Docker Compose' 'comando docker compose disponible' 'Actualiza Docker Desktop o instala el plugin de Compose.' | Out-Null
         if (-not $composeReady) { $isReady = $false }
 
@@ -481,13 +676,14 @@ function Test-ModuloReadiness {
         if (-not $daemonReady) { $isReady = $false }
 
         if ($composeReady -and $daemonReady) {
-            docker compose -f $composeFile config --quiet *> $null
-            $composeConfigReady = $LASTEXITCODE -eq 0
+            $composeConfigResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'config', '--quiet')
+            $composeConfigReady = $composeConfigResult.ExitCode -eq 0
             Write-ReadinessResult $composeConfigReady 'Configuracion Compose' 'infra/compose.yaml es valido' 'Revisa infra/compose.yaml.' | Out-Null
             if (-not $composeConfigReady) { $isReady = $false }
 
-            $dbStatus = (& docker compose -f $composeFile ps db --format json 2>$null | Out-String).Trim()
-            if ($LASTEXITCODE -ne 0 -or -not $dbStatus) {
+            $dbStatusResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'ps', 'db', '--format', 'json')
+            $dbStatus = $dbStatusResult.Output
+            if ($dbStatusResult.ExitCode -ne 0 -or -not $dbStatus) {
                 Write-ReadinessResult $false 'PostgreSQL de Modulo' 'el contenedor no esta creado o no esta ejecutandose' 'Elige [1] para ejecutar docker compose up -d --wait.' | Out-Null
                 $isReady = $false
             } else {
@@ -512,7 +708,7 @@ function Test-ModuloReadiness {
         try {
             $migrationResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py showmigrations --plan'
             $migrationsReady = $migrationResult.ExitCode -eq 0 -and -not ($migrationResult.Output -match '\[ \]')
-            Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [1] para aplicar las migraciones pendientes.' | Out-Null
+            Write-ReadinessResult $migrationsReady 'Migraciones Django' 'todas las migraciones estan aplicadas' 'Elige [5] para aplicar las migraciones pendientes.' | Out-Null
             if (-not $migrationsReady) { $isReady = $false }
 
             $djangoResult = Invoke-UvReadOnly 'run --frozen --no-sync --env-file .env python manage.py check'
@@ -551,6 +747,7 @@ if ($InstallPrerequisites) {
 }
 
 if ($preparationChoice -eq 'Check') {
+    Refresh-ProcessToolPath
     if (-not (Test-ModuloReadiness)) { exit 1 }
     exit 0
 }
@@ -560,6 +757,9 @@ if ($preparationChoice -eq 'Stop') {
     exit 0
 }
 
+# Hace disponibles en esta misma terminal instalaciones existentes de Docker/Volta.
+Refresh-ProcessToolPath
+
 if ($preparationChoice -eq 'Docker') {
     if (-not (Confirm-PreparationChoice 'iniciar Docker y PostgreSQL, sin preparar backend ni frontend')) {
         Write-Host 'No se realizo ninguna accion.'
@@ -568,30 +768,67 @@ if ($preparationChoice -eq 'Docker') {
 
     Write-Host ''
     Write-Host '[Docker] Iniciando Docker y PostgreSQL...'
-    if (-not (Test-DockerDesktopInstalled)) {
+    if (-not (Test-DockerToolingAvailable)) {
         if (-not (Confirm-DockerDesktopInstallation)) {
-            Write-Host 'Docker Desktop es necesario para iniciar PostgreSQL con esta opcion. No se realizo ninguna accion.'
+            Write-Host 'Se necesita Docker con Compose para iniciar PostgreSQL con esta opcion. No se realizo ninguna accion.'
             exit 0
         }
         Install-DockerDesktop
     }
     Refresh-ProcessToolPath
     Require-Command 'docker' 'Instala Docker Desktop con Compose: https://docs.docker.com/get-docker/'
-    docker compose version
-    if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+    $composeVersionResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+    Write-DockerCommandOutput $composeVersionResult
+    if ($composeVersionResult.ExitCode -ne 0) { throw 'Docker Compose no esta disponible.' }
     if (-not (Start-DockerDaemon)) {
         throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
     }
 
     Push-Location $repositoryRoot
     try {
-        docker compose -f $composeFile up -d --wait
-        if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+        $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+        Write-DockerCommandOutput $postgresResult
+        if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
     } finally {
         Pop-Location
     }
-    Write-Host '[OK] Docker y PostgreSQL estan listos. No se modificaron backend, frontend ni migraciones.'
-    Write-Host 'Si el backend ya estaba preparado y necesitas aplicarlas: cd backend; uv run --frozen --env-file .env python manage.py migrate'
+    Write-Host '[OK] Docker y PostgreSQL estan listos.'
+    if (Confirm-MigrationsAfterDocker) {
+        Invoke-ModuloMigrations
+    } else {
+        Write-Host 'No se aplicaron migraciones. Elige [5] cuando quieras ejecutarlas.'
+    }
+    exit 0
+}
+
+if ($preparationChoice -eq 'Migrate') {
+    if (-not (Confirm-PreparationChoice 'iniciar PostgreSQL si hace falta y aplicar solo las migraciones Django')) {
+        Write-Host 'No se realizo ninguna accion.'
+        exit 0
+    }
+
+    if (-not (Test-DockerToolingAvailable)) {
+        if (-not (Confirm-DockerDesktopInstallation)) {
+            throw 'Se necesita Docker con Compose para aplicar las migraciones.'
+        }
+        Install-DockerDesktop
+    }
+    if (-not (Start-DockerDaemon)) {
+        throw 'Docker no se pudo iniciar. Abre Docker Desktop manualmente, espera a que este listo y vuelve a elegir [5].'
+    }
+
+    Push-Location $repositoryRoot
+    try {
+        Write-Host '[Migraciones] Iniciando PostgreSQL si hace falta...'
+        $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+        Write-DockerCommandOutput $postgresResult
+        if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    } finally {
+        Pop-Location
+    }
+
+    Invoke-ModuloMigrations
+    Write-Host '[OK] No se modificaron las dependencias del backend ni el frontend.'
     exit 0
 }
 
@@ -664,10 +901,16 @@ try {
     if ($nodeVersion -ne $expectedNode -or $npmVersion -ne $expectedNpm) {
         throw "Volta debe aplicar Node $expectedNode y npm $expectedNpm segun frontend/package.json."
     }
-    Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez puede tardar mientras descarga y descomprime paquetes...'
-    volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
-    Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
+    $frontendLockHash = Get-FrontendLockHash
+    if (Test-FrontendDependenciesCurrent $frontendLockHash) {
+        Write-Host '[OK] Dependencias frontend ya coinciden con package-lock.json; se omite npm ci.'
+    } else {
+        Write-Host '[... ] Instalando dependencias frontend desde package-lock.json; la primera vez descarga y descomprime cientos de paquetes. Las ejecuciones posteriores reutilizan la cache local de npm.'
+        volta run --node $package.volta.node --npm $expectedNpm -- npm ci --no-audit --no-fund --prefer-offline
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron instalar las dependencias Angular.' }
+        Write-FrontendLockMarker $frontendLockHash
+        Write-Host '[OK] Dependencias frontend instaladas desde package-lock.json.'
+    }
 } finally {
     Pop-Location
 }
@@ -683,8 +926,9 @@ if ($preparationChoice -eq 'Prepare' -and -not (Confirm-DockerStartup)) {
 Write-Host ''
 Write-Host '[3/3] Preparando PostgreSQL y migraciones...'
 Require-Command 'docker' 'Instala Docker con Compose: https://docs.docker.com/get-docker/'
-docker compose version
-if ($LASTEXITCODE -ne 0) { throw 'Docker Compose no esta disponible.' }
+$composeVersionResult = Invoke-DockerCommand -Arguments @('compose', 'version')
+Write-DockerCommandOutput $composeVersionResult
+if ($composeVersionResult.ExitCode -ne 0) { throw 'Docker Compose no esta disponible.' }
 
 if (-not (Start-DockerDaemon)) {
     throw 'Docker esta instalado, pero el motor no se pudo iniciar. Docker Desktop se abre automaticamente si esta instalado; completa su configuracion inicial y revisa WSL 2 antes de volver a ejecutar el script.'
@@ -693,8 +937,9 @@ if (-not (Start-DockerDaemon)) {
 Push-Location $repositoryRoot
 try {
     Write-Host '[... ] Iniciando PostgreSQL y esperando a que este saludable...'
-    docker compose -f $composeFile up -d --wait
-    if ($LASTEXITCODE -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
+    $postgresResult = Invoke-DockerCommand -Arguments @('compose', '-f', $composeFile, 'up', '-d', '--wait')
+    Write-DockerCommandOutput $postgresResult
+    if ($postgresResult.ExitCode -ne 0) { throw 'No se pudo iniciar PostgreSQL con Docker Compose.' }
     Write-Host '[OK] PostgreSQL esta listo.'
 } finally {
     Pop-Location

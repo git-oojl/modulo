@@ -9,20 +9,22 @@ No instales Python, Node.js, npm ni PostgreSQL manualmente solo para Modulo. Si 
 Después de clonar el repositorio, ejecuta desde su raíz:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-Elige `[1]` para preparar un clon con las herramientas ya instaladas. Elige `[2]` para una **instalación completa: herramientas + entorno de Modulo**; instala lo que falte con WinGet, configura Volta/uv y prepara el clon. Elige `[3]` para revisar el estado sin modificar nada. Elige `[4]` para preparar la infraestructura: si Docker Desktop falta, ofrece instalarlo con WinGet, y luego inicia Docker y PostgreSQL sin preparar el código ni ejecutar migraciones. La sección [Preparador de Windows](#preparador-de-windows-scriptssetupps1) detalla cada opción.
+El comando funciona tanto en Windows PowerShell 5.1 como en PowerShell 7. Si tu política de ejecución ya permite scripts locales, también sirve `.\scripts\setup.ps1`.
+
+Elige `[1]` para preparar un clon con las herramientas ya instaladas. Elige `[2]` para una **instalación completa: herramientas + entorno de Modulo**; instala lo que falte con WinGet, configura Volta/uv y prepara el clon. Elige `[3]` para revisar el estado sin modificar nada. Elige `[4]` para preparar la infraestructura: si no encuentra un cliente Docker con Compose, ofrece instalar Docker Desktop con WinGet y luego inicia Docker y PostgreSQL; al terminar, pregunta si también debe aplicar migraciones. Elige `[5]` para iniciar PostgreSQL si hace falta y aplicar solo las migraciones Django. La sección [Preparador de Windows](#preparador-de-windows-scriptssetupps1) detalla cada opción.
 
 La instalación inicial de Docker Desktop puede pedir que aceptes sus términos o completes WSL 2/virtualización. Ábrelo y termina esa configuración antes de volver a ejecutar el script. En macOS, Linux y Windows con una preparación manual preferida, sigue las secciones específicas de esta guía y la ruta manual del [README principal](../README.md).
 
 ### Capturas del preparador
 
-El menú muestra las tres acciones disponibles:
+El menú muestra las acciones disponibles:
 
-![Menu del preparador](screenshots/setup-menu.png)
+![Menu del preparador](screenshots/setup-menu-current.png)
 
-Este informe de `[3]` es una ejecución real en un clon sin preparar: Volta, uv, Node/npm y WSL 2 están disponibles; faltan `node_modules`, `.venv`, `backend/.env` y Docker. Las opciones de estado de Windows aparecen como informativas porque consultarlas requiere una terminal elevada.
+Este informe de `[3]` muestra un entorno listo para desarrollar. Las opciones de estado de Windows pueden aparecer como informativas cuando PowerShell no está elevado.
 
 ![Informe real de comprobacion de dependencias](screenshots/setup-check.png)
 
@@ -120,7 +122,7 @@ Las versiones actuales de Docker Desktop y el plugin incluyen Compose como `dock
 El script es el metodo principal para preparar Modulo en Windows. Tras clonar, ejecútalo desde la raíz:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
 Al iniciarse, el script muestra estas opciones en la terminal. Las opciones `1`, `2` y `4` piden confirmar con `[Y/n]` (`Y` confirma; `N` cancela); `3` comprueba directamente:
@@ -128,7 +130,8 @@ Al iniciarse, el script muestra estas opciones en la terminal. Las opciones `1`,
 - `1`: prepara el backend y frontend con las herramientas instaladas. Después pregunta si debe iniciar Docker, PostgreSQL y aplicar migraciones.
 - `2`: **instalación completa: herramientas + entorno de Modulo**. Instala solo los prerrequisitos que falten, configura Volta/uv para el usuario actual y prepara Modulo. Confirma antes de continuar.
 - `3`: comprueba dependencias instaladas y el estado de Modulo. En Windows tambien revisa `wsl --status` y el estado de las caracteristicas `Microsoft-Windows-Subsystem-Linux` y `VirtualMachinePlatform`, ademas del motor Docker. La consulta de caracteristicas puede requerir PowerShell como administrador; si no se puede consultar, lo indica sin elevar permisos. Tambien revisa Volta, Node/npm fijados por el proyecto, uv, Python, los entornos y lockfiles, `backend/.env`, Compose, PostgreSQL, migraciones y la validacion de Django. Muestra `OK`, `NO` o `INFO` con el motivo y una solucion sugerida, sin confirmar ni cambiar archivos.
-- `4`: prepara la infraestructura. Si Docker Desktop falta, ofrece instalarlo con WinGet; después inicia Docker Desktop si es necesario y levanta PostgreSQL mediante Compose. No toca backend, frontend ni migraciones.
+- `4`: prepara la infraestructura. Si no encuentra un cliente Docker, ofrece instalar Docker Desktop con WinGet; después inicia Docker Desktop o Docker Engine si es necesario y levanta PostgreSQL mediante Compose. Cuando PostgreSQL está listo, pregunta si también debe aplicar las migraciones; la respuesta predeterminada es `N`.
+- `5`: inicia Docker y PostgreSQL si hace falta, y aplica las migraciones Django con el entorno backend existente. No sincroniza dependencias ni toca el frontend.
 - `0`: sale sin preparar el proyecto ni modificar el equipo.
 
 Es seguro ejecutarlo de nuevo en el mismo clon o en otro clon: reutiliza las herramientas y las cachés existentes, no actualiza herramientas ya presentes, no sobrescribe `backend/.env`, no modifica los lockfiles y aplica solamente las migraciones pendientes.
@@ -142,19 +145,21 @@ En las opciones `1` y `2`:
 `-InstallPrerequisites` evita el menu y selecciona la instalacion de herramientas faltantes, aunque conserva la confirmacion:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -InstallPrerequisites
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -InstallPrerequisites
 ```
 
-Antes de preparar el proyecto, el script comprueba si faltan Volta, uv o Docker Desktop. Para Docker Desktop comprueba su ejecutable, no solo el comando `docker`: este último también puede pertenecer a otro Engine o cliente. Para cada herramienta ausente usa WinGet con estos identificadores: `Volta.Volta`, `astral-sh.uv` y `Docker.DockerDesktop`. No actualiza ni desinstala una herramienta que ya esté presente. También añade al proceso actual las rutas conocidas de las herramientas recién instaladas, por lo que continúa automáticamente con uv, Volta y Compose cuando estén disponibles.
+Antes de preparar el proyecto, el script comprueba si faltan Volta, uv o un cliente Docker. Docker se considera disponible tanto si procede de Docker Desktop instalado por `.exe`/`.msi` como de otro Docker Engine que suministre `docker` y Compose; no depende de una única ruta del ejecutable de Docker Desktop. Para cada herramienta ausente usa WinGet con estos identificadores: `Volta.Volta`, `astral-sh.uv` y `Docker.DockerDesktop`. No actualiza ni desinstala una herramienta que ya esté presente. También añade al proceso actual las rutas conocidas de las herramientas recién instaladas, por lo que continúa automáticamente con uv, Volta y Compose cuando estén disponibles.
+
+El script busca el ejecutable real de WinGet incluido con Microsoft App Installer en lugar de invocar directamente el alias de `WindowsApps`. Si al escribir `winget` se abre el diálogo de «Selecciona una aplicación», instala o actualiza **Microsoft App Installer** desde Microsoft Store y vuelve a ejecutar el script; el preparador mostrará ese diagnóstico en vez de intentar continuar con un alias roto.
 
 La opción `2` y `-InstallPrerequisites` configuran el usuario actual: colocan los shims de Volta (`%LOCALAPPDATA%\Volta\bin`) al principio del `PATH` de usuario y guardan `UV_MANAGED_PYTHON=true`. En terminales nuevas, Volta tendrá prioridad sobre un Node.js independiente, nvm o fnm; fuera de un proyecto con pines, usará el Node predeterminado de Volta. Los runtimes anteriores no se eliminan, pero pueden quedar ocultos por ese orden de `PATH`. Si otros proyectos dependen de nvm/fnm o de otro Node, elige `1` o usa `-SkipPrerequisiteInstallation` después de haber comprobado que Volta, uv y Docker ya están disponibles.
 
-Después de preparar backend y frontend, la opción `[1]` pregunta si quieres continuar con Docker, PostgreSQL y las migraciones; responder `N` termina correctamente con esas tres tareas pendientes. La opción `[2]` continúa automáticamente. Si el motor Docker no responde, el script inicia Docker Desktop y espera hasta 90 segundos. La primera ejecución puede mostrar sus términos o requerir que completes WSL 2, virtualización o un reinicio; esas acciones siguen requiriendo intervención y el script indicará el problema si el motor no queda listo.
+Después de preparar backend y frontend, la opción `[1]` pregunta si quieres continuar con Docker, PostgreSQL y las migraciones; responder `N` termina correctamente con esas tres tareas pendientes. La opción `[2]` continúa automáticamente. Si el motor Docker no responde, el script localiza Docker Desktop tanto en las rutas habituales como junto al cliente `docker.exe`, lo inicia y espera hasta 90 segundos. Si no puede localizarlo, abrirlo o el motor no queda listo, muestra un aviso explícito para abrir Docker Desktop manualmente y completar sus términos, WSL 2, virtualización o un reinicio.
 
 Si las herramientas ya están instaladas y necesitas preparar el clon sin instalar nada ni modificar el `PATH` o las variables de entorno del usuario, usa:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -SkipPrerequisiteInstallation
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1 -SkipPrerequisiteInstallation
 ```
 
 Para comprobar qué quedó configurado:

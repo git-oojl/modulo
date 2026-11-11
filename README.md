@@ -28,14 +28,14 @@ cd modulo
 En Windows, prepara un clon nuevo con el script del repositorio:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 ```
 
-Elige `[1]` si ya tienes Volta, uv y Docker listos; elige `[2]` para una **instalación completa: herramientas + entorno de Modulo**, instalando con WinGet lo que falte. El script crea `backend/.env` si falta, instala los runtimes declarados, sincroniza los lockfiles, levanta PostgreSQL y aplica las migraciones. La opción `[3]` solo revisa el estado del equipo y del proyecto. La opción `[4]` prepara la infraestructura: instala Docker Desktop con WinGet si falta (previa confirmación) e inicia Docker y PostgreSQL, sin tocar backend, frontend ni migraciones.
+Funciona con Windows PowerShell 5.1 y PowerShell 7; si la política local lo permite, también puedes usar `.\scripts\setup.ps1`.
 
-Puedes ejecutarlo de nuevo en cualquier clon: no sobrescribe `.env`, no modifica los lockfiles y aplica las migraciones pendientes. Tras preparar backend y frontend, la opción `[1]` pregunta si quieres iniciar Docker, PostgreSQL y las migraciones; la opción `[2]` lo hace automáticamente. Si el motor no responde, el preparador abre Docker Desktop y espera a que esté listo. La primera vez quizá debas aceptar sus términos o completar la configuración de WSL 2/virtualización. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles de cada opción.
+Usa `[1]` para preparar un entorno ya equipado, `[2]` para una instalación completa, `[3]` para comprobar el estado, `[4]` para Docker/PostgreSQL (con migraciones opcionales) y `[5]` para solo migraciones. El primer `npm ci` puede tardar; las repeticiones omiten esa instalación si el lockfile y las dependencias siguen válidos. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles y diagnósticos.
 
-![Menu del preparador de Windows](docs/screenshots/setup-menu.png)
+![Menu del preparador de Windows](docs/screenshots/setup-menu-current.png)
 
 La [guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) también muestra el informe de comprobación `[3]`.
 
@@ -115,10 +115,10 @@ uv run --frozen --env-file .env python manage.py createsuperuser
 
 ```bash
 cd frontend
-npm start
+npm run dev
 ```
 
-El servidor web de desarrollo abre en `http://localhost:4200/`. `npm start` utiliza `frontend/proxy.conf.json`: las llamadas a rutas relativas `/api/v1/` se redirigen a Django en `127.0.0.1:8000`, sin URLs de API fijas en los componentes ni CORS abierto para desarrollo. Inicia ambos servidores para consumir la API desde Angular.
+El servidor web de desarrollo abre en `http://localhost:4200/`. `npm run dev` (y su alias `npm start`) utiliza `frontend/proxy.conf.json`: las llamadas a rutas relativas `/api/v1/` se redirigen a Django en `127.0.0.1:8000`, sin URLs de API fijas en los componentes ni CORS abierto para desarrollo. Inicia ambos servidores para consumir la API desde Angular.
 
 ## Comandos habituales
 
@@ -138,7 +138,11 @@ Desde `frontend/`:
 npm ci
 npm run build
 npm test -- --watch=false
+npm run lint
+npm run format:check
 ```
+
+Usa `npm run format` para aplicar Prettier al frontend. VS Code recomienda automáticamente las extensiones oficiales o mantenidas por los proyectos de Angular, ESLint, Prettier, Python, Pylance, Docker y YAML al abrir la raíz del repositorio.
 
 Desde la raíz:
 
