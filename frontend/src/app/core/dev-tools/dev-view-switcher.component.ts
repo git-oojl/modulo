@@ -3,7 +3,6 @@ import {
   Component,
   DestroyRef,
   OnInit,
-  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -11,11 +10,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
-import { AuthService } from '../auth/auth.service';
-import { UserRole } from '../auth/auth.models';
+import { AuthService, DevelopmentMode, PreviewViewer } from '../auth/auth.service';
 import { FeatureFlagsService } from '../config/feature-flags.service';
 import { BackendHealthService } from './backend-health.service';
-import { DevView, devViews } from './dev-view.registry';
+import { devViews } from './dev-view.registry';
 
 @Component({
   selector: 'app-dev-view-switcher',
@@ -32,40 +30,13 @@ export class DevViewSwitcherComponent implements OnInit {
   readonly featureFlags = inject(FeatureFlagsService);
   readonly isOpen = signal(false);
   readonly selectedViewId = signal(devViews[0].id);
-  readonly selectedViewer = signal<UserRole | 'publico'>(this.auth.user()?.role ?? 'administrador');
   readonly views = devViews;
-  readonly roles: { value: UserRole | 'publico'; label: string }[] = [
+  readonly viewers: { value: PreviewViewer; label: string }[] = [
     { value: 'asesor', label: 'Asesor' },
     { value: 'gerencia', label: 'Gerencia' },
     { value: 'administrador', label: 'Administrador' },
     { value: 'publico', label: 'Público (sin sesión)' },
   ];
-  readonly selectedView = computed<DevView>(
-    () => devViews.find((view) => view.id === this.selectedViewId()) ?? devViews[0],
-  );
-  readonly viewIsAllowed = computed(() => {
-    const view = this.selectedView();
-    const viewer = this.selectedViewer();
-    if (view.publicPreview) {
-      return viewer === 'publico' && this.featureFlags.publicCatalogueEnabled();
-    }
-
-    return viewer !== 'publico' && (!view.roles || view.roles.includes(viewer));
-  });
-  readonly accessMessage = computed(() => {
-    const view = this.selectedView();
-    const viewer = this.selectedViewer();
-    if (view.publicPreview && viewer !== 'publico') {
-      return 'Vista pública: se abre como visitante sin sesión.';
-    }
-    if (!view.publicPreview && viewer === 'publico') {
-      return 'Sin sesión: una ruta interna redirige al inicio de sesión.';
-    }
-    if (!this.viewIsAllowed()) {
-      return 'Este rol no tiene acceso: la guarda de rol mostrará 403.';
-    }
-    return 'El perfil seleccionado puede abrir esta ruta.';
-  });
 
   ngOnInit(): void {
     this.syncSelectedView(this.router.url);
@@ -78,25 +49,42 @@ export class DevViewSwitcherComponent implements OnInit {
     void this.backend.refresh();
   }
 
+  setMode(mode: DevelopmentMode): void {
+    if (mode === 'preview') {
+      this.auth.enterPreview(this.auth.previewViewer());
+      if (this.auth.previewViewer() === 'publico') {
+        this.featureFlags.setDevelopmentCatalogueEnabled(true);
+      }
+    } else {
+      this.auth.leavePreview();
+      this.featureFlags.setDevelopmentCatalogueEnabled(false);
+    }
+
+    void this.router.navigateByUrl(this.router.url);
+  }
+
   selectView(viewId: string): void {
     this.selectedViewId.set(viewId);
-    const view = this.selectedView();
-    if (view.publicPreview) {
+    const view = devViews.find((candidate) => candidate.id === viewId) ?? devViews[0];
+    if (this.auth.isPreviewMode() && view.publicPreview) {
       this.featureFlags.setDevelopmentCatalogueEnabled(true);
-      this.selectRole('publico');
+      this.auth.setPreviewViewer('publico');
     }
     void this.router.navigateByUrl(view.path);
   }
 
-  selectRole(role: string): void {
-    const viewer = role as UserRole | 'publico';
-    this.selectedViewer.set(viewer);
-    this.auth.setDevelopmentRole(viewer);
-    if (viewer === 'publico') {
+  selectPreviewViewer(viewer: string): void {
+    const selectedViewer = viewer as PreviewViewer;
+    this.auth.setPreviewViewer(selectedViewer);
+    if (selectedViewer === 'publico') {
       this.featureFlags.setDevelopmentCatalogueEnabled(true);
       this.selectedViewId.set('catalogue');
       void this.router.navigateByUrl('/');
     }
+  }
+
+  selectedView() {
+    return devViews.find((view) => view.id === this.selectedViewId()) ?? devViews[0];
   }
 
   private syncSelectedView(url: string): void {

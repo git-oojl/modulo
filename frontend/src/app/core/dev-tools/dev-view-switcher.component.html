@@ -8,6 +8,29 @@
       <button type="button" aria-label="Cerrar herramientas" (click)="isOpen.set(false)">×</button>
     </header>
 
+    <section class="dev-switcher__mode" aria-label="Modo de desarrollo">
+      <div class="dev-switcher__mode-heading">
+        <span>Modo</span>
+        <strong>{{ auth.developmentMode() === 'normal' ? 'Normal' : 'Preview' }}</strong>
+      </div>
+      <div class="dev-switcher__mode-options">
+        <button
+          type="button"
+          [class.dev-switcher__mode-option--active]="auth.developmentMode() === 'normal'"
+          (click)="setMode('normal')"
+        >
+          Normal
+        </button>
+        <button
+          type="button"
+          [class.dev-switcher__mode-option--active]="auth.developmentMode() === 'preview'"
+          (click)="setMode('preview')"
+        >
+          Preview
+        </button>
+      </div>
+    </section>
+
     <label class="dev-switcher__field">
       <span>Vista</span>
       <select [ngModel]="selectedViewId()" (ngModelChange)="selectView($event)">
@@ -18,17 +41,17 @@
     </label>
 
     <label class="dev-switcher__field">
-      <span>Ver como</span>
-      <select [ngModel]="selectedViewer()" (ngModelChange)="selectRole($event)">
-        @for (role of roles; track role.value) {
-          <option [value]="role.value">{{ role.label }}</option>
+      <span>Perfil de preview</span>
+      <select
+        [disabled]="!auth.isPreviewMode()"
+        [ngModel]="auth.previewViewer()"
+        (ngModelChange)="selectPreviewViewer($event)"
+      >
+        @for (viewer of viewers; track viewer.value) {
+          <option [value]="viewer.value">{{ viewer.label }}</option>
         }
       </select>
     </label>
-
-    <p class="dev-switcher__access" [class.dev-switcher__access--blocked]="!viewIsAllowed()">
-      {{ accessMessage() }}
-    </p>
 
     <section
       class="dev-switcher__health"

@@ -1,3 +1,27 @@
 :host {
   display: block;
 }
+
+.system-state {
+  max-width: 42rem;
+  margin: 12vh auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.system-state__code {
+  margin: 0;
+  color: var(--modulo-magenta-500);
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+h1 {
+  margin: 1rem 0 0.5rem;
+}
+
+p:not(.system-state__code) {
+  margin: 0;
+  color: var(--modulo-muted);
+}

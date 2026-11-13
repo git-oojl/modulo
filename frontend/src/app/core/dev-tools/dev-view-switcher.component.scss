@@ -102,6 +102,59 @@
   gap: 0.3125rem;
 }
 
+.dev-switcher__mode {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.6875rem;
+  background: rgb(30 41 59 / 80%);
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.625rem;
+}
+
+.dev-switcher__mode-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.dev-switcher__mode-heading span {
+  color: #cbd5e1;
+  font-size: 0.78rem;
+}
+
+.dev-switcher__mode-heading strong {
+  font-size: 0.82rem;
+}
+
+.dev-switcher__mode-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+}
+
+.dev-switcher__mode-options button {
+  padding: 0.4375rem 0.5rem;
+  cursor: pointer;
+  color: #cbd5e1;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.4375rem;
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.dev-switcher__mode-options button:hover {
+  background: rgb(125 211 252 / 20%);
+}
+
+.dev-switcher__mode-options .dev-switcher__mode-option--active {
+  color: #082f49;
+  background: #bae6fd;
+  border-color: #7dd3fc;
+  font-weight: 700;
+}
+
 .dev-switcher__field select {
   width: 100%;
   padding: 0.5625rem 0.625rem;
@@ -111,17 +164,6 @@
   border-radius: 0.5rem;
   font: inherit;
   font-size: 0.82rem;
-}
-
-.dev-switcher__access {
-  margin: -0.125rem 0 0;
-  color: #bbf7d0;
-  font-size: 0.8rem;
-  line-height: 1.35;
-}
-
-.dev-switcher__access--blocked {
-  color: #fecaca;
 }
 
 .dev-switcher__health {
