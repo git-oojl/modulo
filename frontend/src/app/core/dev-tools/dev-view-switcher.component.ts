@@ -1,13 +1,16 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   OnInit,
   computed,
   inject,
   signal,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { filter } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { UserRole } from '../auth/auth.models';
 import { FeatureFlagsService } from '../config/feature-flags.service';
@@ -23,6 +26,7 @@ import { DevView, devViews } from './dev-view.registry';
 })
 export class DevViewSwitcherComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   readonly auth = inject(AuthService);
   readonly backend = inject(BackendHealthService);
   readonly featureFlags = inject(FeatureFlagsService);
@@ -64,10 +68,13 @@ export class DevViewSwitcherComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    const currentView = devViews.find((view) => this.router.url.startsWith(view.path));
-    if (currentView) {
-      this.selectedViewId.set(currentView.id);
-    }
+    this.syncSelectedView(this.router.url);
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => this.syncSelectedView(event.urlAfterRedirects));
     void this.backend.refresh();
   }
 
@@ -85,5 +92,31 @@ export class DevViewSwitcherComponent implements OnInit {
     const viewer = role as UserRole | 'publico';
     this.selectedViewer.set(viewer);
     this.auth.setDevelopmentRole(viewer);
+  }
+
+  private syncSelectedView(url: string): void {
+    const currentPath = url.split(/[?#]/)[0].replace(/\/$/, '') || '/';
+    const currentView = devViews
+      .filter((view) => this.viewMatchesPath(view.path, currentPath))
+      .sort((left, right) => right.path.length - left.path.length)[0];
+
+    if (currentView) {
+      this.selectedViewId.set(currentView.id);
+    }
+  }
+
+  private viewMatchesPath(viewPath: string, currentPath: string): boolean {
+    if (viewPath === '/') {
+      return currentPath === '/';
+    }
+
+    const viewSegments = viewPath.split('/').filter(Boolean);
+    const currentSegments = currentPath.split('/').filter(Boolean);
+    return (
+      viewSegments.length === currentSegments.length &&
+      viewSegments.every(
+        (segment, index) => segment.startsWith('demo-') || segment === currentSegments[index],
+      )
+    );
   }
 }

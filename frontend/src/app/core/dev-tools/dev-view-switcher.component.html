@@ -34,13 +34,16 @@
       class="dev-switcher__health"
       [class]="'dev-switcher__health dev-switcher__health--' + backend.health().state"
     >
-      <div class="dev-switcher__service-lines">
-        <p>
-          <span>Backend</span><strong>{{ backend.health().api }}</strong>
-        </p>
-        <p>
-          <span>PostgreSQL</span><strong>{{ backend.health().database }}</strong>
-        </p>
+      <div>
+        <p class="dev-switcher__health-label">Servicios</p>
+        <div class="dev-switcher__service-lines">
+          <p>
+            <span>Backend</span><strong>{{ backend.health().api }}</strong>
+          </p>
+          <p>
+            <span>PostgreSQL</span><strong>{{ backend.health().database }}</strong>
+          </p>
+        </div>
       </div>
       <button
         type="button"
