@@ -232,7 +232,13 @@
     </div>
   } @else {
     <div class="contacts__content">
-      <h1 id="contacts-title">Contactos</h1>
+      <div class="contacts__page-header">
+        <h1 id="contacts-title">Contactos</h1>
+        <button class="contacts__new-button" type="button" (click)="showNewContactForm = true">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          Contacto nuevo
+        </button>
+      </div>
 
       <form class="filters" aria-label="Filtros de contactos">
         <label class="filters__field filters__field--search">
@@ -357,11 +363,6 @@
         </div>
       </div>
 
-      <div class="contacts__footer">
-        <button class="contacts__new-button" type="button" (click)="showNewContactForm = true">
-          Contacto nuevo
-        </button>
-      </div>
     </div>
   }
 

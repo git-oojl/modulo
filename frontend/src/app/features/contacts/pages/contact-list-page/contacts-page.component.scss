@@ -133,8 +133,21 @@ h1 {
   color: #1a1a1a;
 }
 
+.contacts__page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .contacts__content > h1 {
   margin-bottom: 1.5rem;
+}
+
+.contacts__page-header h1 {
+  margin: 0;
 }
 
 .new-contact {
@@ -509,6 +522,10 @@ td:nth-child(7) {
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .contacts__new-button:hover {
