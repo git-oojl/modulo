@@ -245,6 +245,8 @@ h1 {
 
 .filters {
   display: grid;
+  width: 100%;
+  box-sizing: border-box;
   max-width: none;
   grid-template-columns: minmax(20rem, 2fr) repeat(3, minmax(9rem, 1fr));
   gap: 1rem;
@@ -274,6 +276,8 @@ h1 {
 .filters__field input,
 .filters__field select {
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 39px;
   border: 0;
   border-radius: 8px;
@@ -710,6 +714,16 @@ td:nth-child(7) {
 
   table {
     min-width: 940px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 992px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filters__field--search {
+    grid-column: span 2;
   }
 }
 
