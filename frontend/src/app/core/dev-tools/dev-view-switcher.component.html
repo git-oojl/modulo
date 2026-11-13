@@ -1,0 +1,63 @@
+<button class="dev-switcher__toggle" type="button" (click)="isOpen.set(!isOpen())">
+  {{ isOpen() ? 'Cerrar herramientas' : 'Dev tools' }}
+</button>
+
+@if (isOpen()) {
+  <aside class="dev-switcher" aria-label="Herramientas de desarrollo">
+    <header>
+      <div>
+        <strong>Modulo: vista de desarrollo</strong>
+        <span>Solo aparece en compilaciones de desarrollo.</span>
+      </div>
+      <button type="button" aria-label="Cerrar herramientas" (click)="isOpen.set(false)">×</button>
+    </header>
+
+    <label>
+      <span>Vista</span>
+      <select [ngModel]="selectedViewId()" (ngModelChange)="selectView($event)">
+        @for (view of views; track view.id) {
+          <option [value]="view.id">{{ view.group }} — {{ view.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Simular rol</span>
+      <select [ngModel]="auth.user()?.role" (ngModelChange)="selectRole($event)">
+        @for (role of roles; track role.value) {
+          <option [value]="role.value">{{ role.label }}</option>
+        }
+      </select>
+    </label>
+
+    <p [class.dev-switcher__access--blocked]="!viewIsAllowed()" class="dev-switcher__access">
+      {{
+        viewIsAllowed()
+          ? 'El rol puede abrir esta ruta.'
+          : 'La guarda de rol enviará esta vista a 403.'
+      }}
+    </p>
+
+    <section
+      class="dev-switcher__health"
+      [class]="'dev-switcher__health dev-switcher__health--' + backend.health().state"
+    >
+      <div>
+        <strong>{{ backend.health().api }}</strong>
+        <span>{{ backend.health().database }}</span>
+      </div>
+      <small>{{ backend.health().detail }}</small>
+      <button type="button" (click)="backend.refresh()">Comprobar otra vez</button>
+    </section>
+
+    <section class="dev-switcher__file">
+      <span>Archivo de la vista</span>
+      <code>{{ selectedView().filePath }}</code>
+      <span>Ruta: {{ selectedView().path }}</span>
+    </section>
+
+    <button class="dev-switcher__open" type="button" (click)="openSelectedView()">
+      Abrir vista
+    </button>
+  </aside>
+}

@@ -13,6 +13,10 @@ Las rutas internas canónicas viven bajo `/app/`. Las listas, altas, detalles y 
 
 El catálogo de propiedades está aislado en `features/catalog/` y se mantiene apagado mediante `core/config/app-features.config.ts`. Activarlo no concede acceso al sistema de empleados.
 
+## Herramientas de desarrollo
+
+En compilaciones de desarrollo, `core/dev-tools/` presenta un selector flotante de vistas. Registra la ruta, archivo canónico y roles permitidos de cada pantalla interna, permite simular `asesor`, `gerencia` o `administrador` para probar guardas de cliente y consulta `GET /api/v1/health/`. Ese endpoint confirma tanto Django como la conexión PostgreSQL. No se renderiza en compilaciones de producción ni sustituye la autorización del backend.
+
 ## Convenciones para nuevas funciones
 
 1. Añade contratos a `models/` y solicitudes HTTP a `data-access/`; las páginas no hacen llamadas HTTP directas.

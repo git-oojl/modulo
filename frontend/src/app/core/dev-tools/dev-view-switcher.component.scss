@@ -1,0 +1,122 @@
+:host {
+  position: fixed;
+  z-index: 1000;
+  right: 1rem;
+  bottom: 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.dev-switcher,
+.dev-switcher__toggle {
+  border: 1px solid #4c1d95;
+  border-radius: 0.75rem;
+  background: #24103f;
+  color: #fff;
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 25%);
+}
+
+.dev-switcher__toggle,
+.dev-switcher button,
+.dev-switcher select {
+  font: inherit;
+}
+
+.dev-switcher__toggle,
+.dev-switcher button {
+  cursor: pointer;
+}
+
+.dev-switcher__toggle {
+  padding: 0.625rem 0.875rem;
+}
+
+.dev-switcher {
+  width: min(23rem, calc(100vw - 2rem));
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.dev-switcher header,
+.dev-switcher label,
+.dev-switcher__health,
+.dev-switcher__file {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0.75rem;
+}
+
+.dev-switcher header {
+  grid-template-columns: 1fr auto;
+  background: #3b176b;
+}
+
+.dev-switcher header span,
+.dev-switcher label span,
+.dev-switcher__health span,
+.dev-switcher__health small,
+.dev-switcher__file span {
+  color: #d8c5f7;
+  font-size: 0.75rem;
+}
+
+.dev-switcher select,
+.dev-switcher__health,
+.dev-switcher__file {
+  border-radius: 0.375rem;
+}
+
+.dev-switcher select {
+  border: 0;
+  padding: 0.5rem;
+}
+
+.dev-switcher__access {
+  margin: 0 0.75rem;
+  color: #bbf7d0;
+  font-size: 0.8rem;
+}
+
+.dev-switcher__access--blocked {
+  color: #fecaca;
+}
+
+.dev-switcher__health {
+  margin: 0.75rem;
+  background: #312e81;
+}
+
+.dev-switcher__health--online {
+  background: #14532d;
+}
+
+.dev-switcher__health--degraded,
+.dev-switcher__health--offline {
+  background: #7f1d1d;
+}
+
+.dev-switcher__health button,
+.dev-switcher__open,
+.dev-switcher header button {
+  border: 0;
+  border-radius: 0.375rem;
+  padding: 0.45rem 0.625rem;
+}
+
+.dev-switcher__file {
+  margin: 0.75rem;
+  background: #12051f;
+}
+
+.dev-switcher__file code {
+  overflow-wrap: anywhere;
+  color: #f5d0fe;
+  font-size: 0.7rem;
+}
+
+.dev-switcher__open {
+  width: calc(100% - 1.5rem);
+  margin: 0 0.75rem 0.75rem;
+  background: #e879f9;
+  color: #2e1065;
+  font-weight: 700;
+}

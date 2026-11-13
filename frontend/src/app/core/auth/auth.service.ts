@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, isDevMode, signal } from '@angular/core';
 import { AuthenticatedUser } from './auth.models';
 
 /**
@@ -22,6 +22,15 @@ export class AuthService {
   hasAnyRole(roles: readonly string[]): boolean {
     const user = this.userState();
     return user !== null && roles.includes(user.role);
+  }
+
+  /** Development-preview control only; backend permissions remain authoritative. */
+  setDevelopmentRole(role: AuthenticatedUser['role']): void {
+    if (!isDevMode()) {
+      return;
+    }
+
+    this.userState.update((user) => (user ? { ...user, role } : user));
   }
 
   // TODO(auth): replace with CSRF-aware calls to /api/v1/auth/.
