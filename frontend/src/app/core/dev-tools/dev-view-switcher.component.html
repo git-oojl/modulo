@@ -2,14 +2,14 @@
   <aside class="dev-switcher" aria-label="Herramientas de desarrollo">
     <header class="dev-switcher__header">
       <div>
-        <strong><span class="dev-switcher__dot"></span>Modulo dev</strong>
-        <span>Preview local · no producción</span>
+        <strong><span class="dev-switcher__dot"></span>Dev switcher</strong>
+        <span>Previsualiza vistas</span>
       </div>
       <button type="button" aria-label="Cerrar herramientas" (click)="isOpen.set(false)">×</button>
     </header>
 
     <label class="dev-switcher__field">
-      <span>Vista · cambia de inmediato</span>
+      <span>Vista</span>
       <select [ngModel]="selectedViewId()" (ngModelChange)="selectView($event)">
         @for (view of views; track view.id) {
           <option [value]="view.id">{{ view.group }} — {{ view.label }}</option>
@@ -30,23 +30,17 @@
       {{ accessMessage() }}
     </p>
 
-    <label class="dev-switcher__catalogue-toggle">
-      <input
-        type="checkbox"
-        [ngModel]="featureFlags.publicCatalogueEnabled()"
-        (ngModelChange)="featureFlags.setDevelopmentCatalogueEnabled($event)"
-      />
-      <span>Catálogo público disponible en este preview</span>
-    </label>
-
     <section
       class="dev-switcher__health"
       [class]="'dev-switcher__health dev-switcher__health--' + backend.health().state"
     >
-      <div>
-        <small>Servicios</small>
-        <strong>{{ backend.health().api }}</strong>
-        <span>{{ backend.health().database }}</span>
+      <div class="dev-switcher__service-lines">
+        <p>
+          <span>Backend</span><strong>{{ backend.health().api }}</strong>
+        </p>
+        <p>
+          <span>PostgreSQL</span><strong>{{ backend.health().database }}</strong>
+        </p>
       </div>
       <button
         type="button"

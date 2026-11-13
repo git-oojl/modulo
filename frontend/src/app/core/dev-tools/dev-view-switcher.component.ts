@@ -51,11 +51,8 @@ export class DevViewSwitcherComponent implements OnInit {
   readonly accessMessage = computed(() => {
     const view = this.selectedView();
     const viewer = this.selectedViewer();
-    if (view.publicPreview && !this.featureFlags.publicCatalogueEnabled()) {
-      return 'El catálogo público está desactivado; actívalo abajo para hacer este preview.';
-    }
     if (view.publicPreview && viewer !== 'publico') {
-      return 'Vista pública: selecciona Público (sin sesión) para probarla como visitante.';
+      return 'Vista pública: se abre como visitante sin sesión.';
     }
     if (!view.publicPreview && viewer === 'publico') {
       return 'Sin sesión: una ruta interna redirige al inicio de sesión.';
@@ -79,6 +76,7 @@ export class DevViewSwitcherComponent implements OnInit {
     const view = this.selectedView();
     if (view.publicPreview) {
       this.featureFlags.setDevelopmentCatalogueEnabled(true);
+      this.selectRole('publico');
     }
     void this.router.navigateByUrl(view.path);
   }

@@ -11,9 +11,9 @@ export interface BackendHealth {
 
 const initialHealth: BackendHealth = {
   state: 'checking',
-  api: 'Verificando API',
-  database: 'Verificando PostgreSQL',
-  detail: 'La interfaz continúa disponible mientras se comprueba el entorno.',
+  api: 'Comprobando',
+  database: 'Comprobando',
+  detail: 'GET /api/v1/health/',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -35,15 +35,15 @@ export class BackendHealthService {
 
       this.health.set({
         state: response.ok && databaseOnline ? 'online' : 'degraded',
-        api: response.ok ? 'Django API disponible' : `Django API respondió ${response.status}`,
-        database: databaseOnline ? 'PostgreSQL disponible' : 'PostgreSQL no disponible',
+        api: response.ok ? 'OK' : `Error ${response.status}`,
+        database: databaseOnline ? 'OK' : 'No disponible',
         detail: 'GET /api/v1/health/',
       });
     } catch {
       this.health.set({
         state: 'offline',
-        api: 'Django API no disponible',
-        database: 'PostgreSQL sin verificar',
+        api: 'No disponible',
+        database: 'Sin verificar',
         detail: 'No hubo respuesta de /api/v1/health/ en 3 segundos.',
       });
     } finally {
