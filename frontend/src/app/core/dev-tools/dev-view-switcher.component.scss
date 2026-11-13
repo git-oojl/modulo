@@ -270,3 +270,14 @@
     bottom: 0.5rem;
   }
 }
+
+@media (max-width: 40rem) {
+  :host {
+    bottom: calc(64px + env(safe-area-inset-bottom) + 0.5rem);
+  }
+
+  .dev-switcher {
+    max-height: calc(100dvh - 80px - env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+}

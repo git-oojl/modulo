@@ -316,6 +316,11 @@
 }
 
 @media (max-width: 640px) {
+  .page {
+    gap: 1.25rem;
+    padding: 1.25rem;
+  }
+
   .page__header {
     align-items: flex-start;
     flex-direction: column;
@@ -324,6 +329,12 @@
 
   .summary-cards {
     grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .pagination {

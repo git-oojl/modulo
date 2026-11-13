@@ -672,4 +672,27 @@
     width: 100%;
     margin-left: 0;
   }
+
+  .modal-content {
+    max-height: calc(100dvh - 2rem);
+    overflow: hidden;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area .filters-bar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .content-area .filters-bar .filter-field--search {
+    grid-column: auto;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
 }
