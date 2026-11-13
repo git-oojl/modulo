@@ -1,8 +1,13 @@
 import { Injectable, computed, isDevMode, signal } from '@angular/core';
-import { AuthenticatedUser, UserRole } from './auth.models';
+import { AuthenticatedUser } from './auth.models';
+import {
+  DevelopmentMode,
+  PreviewViewer,
+  readDevelopmentPreviewState,
+  writeDevelopmentPreviewState,
+} from './development-preview.storage';
 
-export type DevelopmentMode = 'normal' | 'preview';
-export type PreviewViewer = UserRole | 'publico';
+export type { DevelopmentMode, PreviewViewer } from './development-preview.storage';
 
 /**
  * The application always consumes one effective session. In development, that
@@ -11,9 +16,10 @@ export type PreviewViewer = UserRole | 'publico';
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly savedPreviewState = readDevelopmentPreviewState();
   private readonly realUserState = signal<AuthenticatedUser | null>(null);
-  private readonly previewViewerState = signal<PreviewViewer>('administrador');
-  readonly developmentMode = signal<DevelopmentMode>('normal');
+  private readonly previewViewerState = signal<PreviewViewer>(this.savedPreviewState.viewer);
+  readonly developmentMode = signal<DevelopmentMode>(this.savedPreviewState.mode);
   readonly previewViewer = this.previewViewerState.asReadonly();
   readonly isPreviewMode = computed(() => this.developmentMode() === 'preview');
   readonly user = computed<AuthenticatedUser | null>(() => {
@@ -52,22 +58,32 @@ export class AuthService {
 
     this.previewViewerState.set(viewer);
     this.developmentMode.set('preview');
+    this.savePreviewState();
   }
 
   leavePreview(): void {
     if (isDevMode()) {
       this.developmentMode.set('normal');
+      this.savePreviewState();
     }
   }
 
   setPreviewViewer(viewer: PreviewViewer): void {
     if (isDevMode()) {
       this.previewViewerState.set(viewer);
+      this.savePreviewState();
     }
   }
 
   clearLocalSession(): void {
     this.realUserState.set(null);
     this.leavePreview();
+  }
+
+  private savePreviewState(): void {
+    writeDevelopmentPreviewState({
+      mode: this.developmentMode(),
+      viewer: this.previewViewerState(),
+    });
   }
 }

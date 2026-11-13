@@ -52,9 +52,7 @@ export class DevViewSwitcherComponent implements OnInit {
   setMode(mode: DevelopmentMode): void {
     if (mode === 'preview') {
       this.auth.enterPreview(this.auth.previewViewer());
-      if (this.auth.previewViewer() === 'publico') {
-        this.featureFlags.setDevelopmentCatalogueEnabled(true);
-      }
+      this.featureFlags.setDevelopmentCatalogueEnabled(true);
     } else {
       this.auth.leavePreview();
       this.featureFlags.setDevelopmentCatalogueEnabled(false);
@@ -66,21 +64,13 @@ export class DevViewSwitcherComponent implements OnInit {
   selectView(viewId: string): void {
     this.selectedViewId.set(viewId);
     const view = devViews.find((candidate) => candidate.id === viewId) ?? devViews[0];
-    if (this.auth.isPreviewMode() && view.publicPreview) {
-      this.featureFlags.setDevelopmentCatalogueEnabled(true);
-      this.auth.setPreviewViewer('publico');
-    }
     void this.router.navigateByUrl(view.path);
   }
 
   selectPreviewViewer(viewer: string): void {
     const selectedViewer = viewer as PreviewViewer;
     this.auth.setPreviewViewer(selectedViewer);
-    if (selectedViewer === 'publico') {
-      this.featureFlags.setDevelopmentCatalogueEnabled(true);
-      this.selectedViewId.set('catalogue');
-      void this.router.navigateByUrl('/');
-    }
+    void this.router.navigateByUrl(this.router.url);
   }
 
   selectedView() {
