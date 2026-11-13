@@ -227,6 +227,13 @@ export class ContactsPageComponent {
     });
   }
 
+  clearContactFilters(): void {
+    this.contactSearch = '';
+    this.selectedContactType = 'Todos';
+    this.selectedContactStatus = 'Todos';
+    this.selectedAgent = 'Todos';
+  }
+
   get contactTypes(): string[] {
     return [...new Set(this.contacts.map(({ type }) => type))].sort((a, b) =>
       a.localeCompare(b, 'es'),

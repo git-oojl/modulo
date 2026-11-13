@@ -58,8 +58,10 @@
       />
     </div>
 
-    <!-- BOTÓN LIMPIAR -->
-    <button class="btn-clear" (click)="limpiarFiltros()">
+  </div>
+
+  <div class="filters-footer">
+    <button class="btn-clear" type="button" (click)="limpiarFiltros()">
       <i class="fa-solid fa-trash-can"></i> Limpiar
     </button>
   </div>
@@ -96,7 +98,7 @@
                 aria-label="Editar"
                 (click)="abrirModalEditar(prop)"
               >
-                <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" /></svg>
               </button>
               <button
                 class="action-icon action-icon--delete"
@@ -104,7 +106,7 @@
                 aria-label="Eliminar"
                 (click)="eliminarPropiedad(prop.id)"
               >
-                <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" /></svg>
               </button>
             </td>
           </tr>

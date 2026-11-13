@@ -236,7 +236,7 @@
 
       <form class="filters" aria-label="Filtros de contactos">
         <label class="filters__field filters__field--search">
-          <span>Busqueda</span>
+          <span>Búsqueda</span>
           <input
             type="search"
             name="contactSearch"
@@ -272,6 +272,12 @@
           </select>
         </label>
       </form>
+
+      <div class="filters__footer">
+        <button class="filters__clear" type="button" (click)="clearContactFilters()">
+          Limpiar
+        </button>
+      </div>
 
       <div class="contacts-table__surface">
         <div class="contacts-table__scroll">

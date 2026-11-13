@@ -125,6 +125,18 @@ h1 {
   line-height: 1.35;
 }
 
+.contacts__content > h1,
+.contact-detail__header h1 {
+  font-family: Poppins, Arial, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.contacts__content > h1 {
+  margin-bottom: 1.5rem;
+}
+
 .new-contact {
   padding: 0;
 }
@@ -243,6 +255,7 @@ h1 {
 .filters__field > span {
   border-bottom: 1px solid #e4e4e4;
   padding: 2px 4px 8px;
+  color: #790069;
 }
 
 .filters__field input,
@@ -272,9 +285,34 @@ h1 {
   padding: 0 14px;
 }
 
+.filters__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.5rem 0 0;
+}
+
+.filters__clear {
+  min-height: 39px;
+  padding: 0 1rem;
+  border: 1px solid #dedee0;
+  border-radius: 8px;
+  background: #fff;
+  color: #4e3a4c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.filters__clear:hover {
+  border-color: #c89bd2;
+  background: #f7eff6;
+  color: #790069;
+}
+
 .contacts-table__surface {
   height: 396px;
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
   overflow: hidden;
 }
 
@@ -298,6 +336,11 @@ td {
   text-overflow: ellipsis;
 }
 
+tbody td:first-child {
+  color: #16002f;
+  font-weight: 700;
+}
+
 th {
   height: auto;
   border-bottom: 1px solid #e0e0e1;
@@ -305,6 +348,8 @@ th {
   color: #7a7a7a;
   font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 th:first-child {
@@ -406,7 +451,8 @@ td:nth-child(7) {
 }
 
 .row-action--delete:hover {
-  background: #fde9e9;
+  background: #f0f0f0;
+  color: #a32121;
 }
 
 .row-action:hover,
@@ -629,6 +675,7 @@ td:nth-child(7) {
   .filters {
     grid-template-columns: minmax(0, 1fr);
   }
+
   .form-card__grid,
   .form-card--assignment .form-card__grid {
     grid-template-columns: minmax(0, 1fr);
