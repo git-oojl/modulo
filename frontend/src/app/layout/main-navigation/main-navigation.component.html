@@ -1,14 +1,15 @@
 <aside class="sidebar">
   <div class="sidebar__brand">
     <span class="brand-full">MODULO</span>
-    <span class="brand-short">M</span> <!-- Para cuando esté encogido -->
+    <span class="brand-short">M</span>
+    <!-- Para cuando esté encogido -->
   </div>
 
   <nav class="sidebar__nav" aria-label="Navegación principal">
     @for (item of menuItems; track item.path) {
-      <a 
-        [routerLink]="item.path" 
-        routerLinkActive="sidebar__link--active" 
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="sidebar__link--active"
         [routerLinkActiveOptions]="{ exact: item.path === '/app/dashboard' }"
         class="sidebar__link"
         [title]="item.label"

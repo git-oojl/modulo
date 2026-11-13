@@ -1,0 +1,25 @@
+:host {
+  display: block;
+}
+
+.placeholder {
+  max-width: 48rem;
+  padding: 2rem;
+}
+
+.placeholder__eyebrow,
+.placeholder__note {
+  color: #6b7280;
+}
+
+.placeholder__eyebrow {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.placeholder__note {
+  margin-top: 2rem;
+  font-style: italic;
+}

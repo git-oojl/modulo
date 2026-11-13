@@ -19,8 +19,10 @@
   margin-bottom: 2rem;
   color: #fff;
   white-space: nowrap;
-  
-  .brand-short { display: none; }
+
+  .brand-short {
+    display: none;
+  }
 }
 
 .sidebar__nav {
@@ -87,7 +89,7 @@
   &:hover {
     background-color: var(--modulo-magenta-700, #790069);
   }
-  
+
   mat-icon {
     font-size: 1.2rem;
     width: 1.2rem;
@@ -109,7 +111,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0; /* Evita que se aplaste en modo encogido */
-  
+
   img {
     width: 100%;
     height: 100%;
@@ -123,15 +125,20 @@
   flex: 1;
   white-space: nowrap;
 
-  strong { font-size: 0.9rem; color: #fff; }
-  span { font-size: 0.75rem; color: #888; }
+  strong {
+    font-size: 0.9rem;
+    color: #fff;
+  }
+  span {
+    font-size: 0.75rem;
+    color: #888;
+  }
 }
 
 .sidebar__more-icon {
   color: #888;
   cursor: pointer;
 }
-
 
 /* =========================================
    MEDIA QUERIES (Modo encogido - Solo iconos)
@@ -143,7 +150,8 @@
   }
 
   /* Ocultar textos y logo largo */
-  .link-text, .brand-full {
+  .link-text,
+  .brand-full {
     display: none !important;
   }
 
@@ -175,8 +183,9 @@
     border-top: none;
     padding-top: 0;
   }
-  
-  .sidebar__user-info, .sidebar__more-icon {
+
+  .sidebar__user-info,
+  .sidebar__more-icon {
     display: none !important;
   }
 }
