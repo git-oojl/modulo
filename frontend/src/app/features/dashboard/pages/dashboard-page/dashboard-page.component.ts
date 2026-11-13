@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../../core/auth/auth.service';
 
 @Component({
   selector: 'app-dashboard-page',
@@ -9,7 +10,12 @@ import { CommonModule } from '@angular/common';
   styleUrl: './dashboard-page.component.scss',
 })
 export class DashboardPageComponent {
-  nombreUsuario = 'Ana';
+  private readonly auth = inject(AuthService);
+
+  get nombreUsuario(): string {
+    return this.auth.user()?.displayName ?? 'Usuario';
+  }
+
   fechaActual = new Date();
 
   proximasCitas = [
