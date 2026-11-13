@@ -34,25 +34,38 @@
       class="dev-switcher__health"
       [class]="'dev-switcher__health dev-switcher__health--' + backend.health().state"
     >
-      <div>
+      <div class="dev-switcher__health-header">
         <p class="dev-switcher__health-label">Servicios</p>
+        <button type="button" (click)="backend.refresh()">Actualizar</button>
+      </div>
+      <div>
         <div class="dev-switcher__service-lines">
           <p>
-            <span>Backend</span><strong>{{ backend.health().api }}</strong>
+            <span class="dev-switcher__service-name">
+              <i
+                class="dev-switcher__service-dot"
+                [class.dev-switcher__service-dot--ok]="
+                  backend.health().state === 'online' || backend.health().state === 'degraded'
+                "
+                aria-hidden="true"
+              ></i>
+              Backend
+            </span>
+            <strong>{{ backend.health().api }}</strong>
           </p>
           <p>
-            <span>PostgreSQL</span><strong>{{ backend.health().database }}</strong>
+            <span class="dev-switcher__service-name">
+              <i
+                class="dev-switcher__service-dot"
+                [class.dev-switcher__service-dot--ok]="backend.health().state === 'online'"
+                aria-hidden="true"
+              ></i>
+              PostgreSQL
+            </span>
+            <strong>{{ backend.health().database }}</strong>
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        title="Comprobar servicios otra vez"
-        aria-label="Comprobar servicios otra vez"
-        (click)="backend.refresh()"
-      >
-        ↻
-      </button>
     </section>
 
     <section class="dev-switcher__file">

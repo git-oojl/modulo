@@ -92,6 +92,11 @@ export class DevViewSwitcherComponent implements OnInit {
     const viewer = role as UserRole | 'publico';
     this.selectedViewer.set(viewer);
     this.auth.setDevelopmentRole(viewer);
+    if (viewer === 'publico') {
+      this.featureFlags.setDevelopmentCatalogueEnabled(true);
+      this.selectedViewId.set('catalogue');
+      void this.router.navigateByUrl('/');
+    }
   }
 
   private syncSelectedView(url: string): void {
