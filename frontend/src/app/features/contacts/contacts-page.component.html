@@ -1,11 +1,416 @@
-<section class="page" aria-labelledby="contacts-title">
-  <p class="page__eyebrow">Relaciones</p>
-  <h1 id="contacts-title">Contactos</h1>
-  <div class="page__empty-state">
-    <h2>Gestión de contactos</h2>
-    <p>
-      La información de prospectos y clientes aparecerá aquí cuando el módulo esté conectado a la
-      API.
-    </p>
-  </div>
+<section class="contacts" aria-labelledby="contacts-title">
+  <header class="topbar">
+    <div class="topbar__date">
+      <span class="topbar__chevrons" aria-hidden="true">»</span>
+      <span>Oct 20, 2026</span>
+    </div>
+
+    <div class="topbar__actions">
+      <button class="topbar__notifications" type="button" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+          <path d="M10 21h4" />
+        </svg>
+        <span class="topbar__notification-dot"></span>
+      </button>
+      <label class="topbar__search">
+        <span class="visually-hidden">Buscar</span>
+        <input type="search" placeholder="Buscar" />
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.8" cy="10.8" r="6.8" />
+          <path d="m16 16 5 5" />
+        </svg>
+      </label>
+    </div>
+  </header>
+
+  @if (selectedContact; as contact) {
+    <div class="contacts__content contact-detail">
+      <div class="contact-detail__breadcrumb">
+        <button type="button" (click)="selectedContact = null">Contactos</button>
+        <span aria-hidden="true">/</span>
+        <span>{{ contact.name }} {{ contact.surname }}</span>
+      </div>
+
+      <header class="contact-detail__header">
+        <div class="contact-detail__identity">
+          <div class="contact-detail__avatar" aria-hidden="true">
+            {{ contactInitials(contact) }}
+          </div>
+          <div>
+            <h1 id="contacts-title">{{ contact.name }} {{ contact.surname }}</h1>
+            <div class="contact-detail__tags">
+              <span>{{ contact.type }}</span>
+              <span>{{ contact.status }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="contact-detail__actions">
+          <a routerLink="/citas">Agendar cita</a>
+        </div>
+      </header>
+
+      <div class="contact-detail__layout">
+        <aside class="contact-detail__sidebar">
+          <section class="detail-card">
+            <h2>Datos de contacto</h2>
+            <dl>
+              <div>
+                <dt>Teléfono</dt>
+                <dd>{{ contact.phone || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Correo</dt>
+                <dd>{{ contact.email || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Presupuesto</dt>
+                <dd>${{ contact.minBudget || 'MIN' }} – ${{ contact.maxBudget || 'MÁX' }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="detail-card">
+            <h2>Registro</h2>
+            <dl>
+              <div>
+                <dt>Agente responsable</dt>
+                <dd>{{ contact.agent }}</dd>
+              </div>
+              <div>
+                <dt>ID del contacto</dt>
+                <dd>{{ contact.id }}</dd>
+              </div>
+              <div>
+                <dt>Fuente</dt>
+                <dd>{{ contact.source }}</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+
+        <div class="contact-detail__main">
+          <section class="detail-card detail-card--appointments">
+            <h2>Citas</h2>
+            <div class="detail-appointments">
+              @for (appointment of detailAppointments; track appointment.title) {
+                <article class="detail-appointment">
+                  <div>
+                    <h3>{{ appointment.title }}</h3>
+                    <p>{{ appointment.details }}</p>
+                  </div>
+                  <span
+                    class="detail-appointment__status"
+                    [class.detail-appointment__status--confirmed]="
+                      appointment.status === 'Confirmada'
+                    "
+                  >
+                    {{ appointment.status }}
+                  </span>
+                </article>
+              }
+            </div>
+          </section>
+
+          <section class="detail-card detail-card--activities">
+            <h2>Actividades</h2>
+            <ol class="detail-activities">
+              @for (activity of detailActivities; track activity.title) {
+                <li>
+                  <span class="detail-activities__dot" aria-hidden="true"></span>
+                  <div>
+                    <h3>{{ activity.title }}</h3>
+                    <p>{{ activity.details }}</p>
+                  </div>
+                </li>
+              }
+            </ol>
+          </section>
+        </div>
+      </div>
+    </div>
+  } @else if (showNewContactForm) {
+    <div class="contacts__content new-contact">
+      <h1 class="new-contact__title" id="contacts-title">
+        {{ editingContactId ? 'Editar contacto' : 'Contacto nuevo' }}
+      </h1>
+
+      <form class="new-contact__form" (ngSubmit)="saveNewContact()">
+        <section class="form-card" aria-labelledby="personal-title">
+          <h2 id="personal-title">Datos personales</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Nombre</span>
+              <input name="name" [(ngModel)]="newContact.name" />
+            </label>
+            <label class="form-field">
+              <span>Apellidos</span>
+              <input name="surname" [(ngModel)]="newContact.surname" />
+            </label>
+            <label class="form-field">
+              <span>Telefono</span>
+              <input name="phone" type="tel" [(ngModel)]="newContact.phone" />
+            </label>
+            <label class="form-field">
+              <span>Correo electronico</span>
+              <input name="email" type="email" [(ngModel)]="newContact.email" />
+            </label>
+            <label class="form-field">
+              <span>Tipo de Contacto</span>
+              <select name="contactType" [(ngModel)]="newContact.contactType">
+                <option>Comprador</option>
+                <option>Vendedor</option>
+                <option>Arrendatario</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Fuente</span>
+              <select name="source" [(ngModel)]="newContact.source">
+                <option>Recomendacion</option>
+                <option>Redes sociales</option>
+                <option>Pagina web</option>
+                <option>Otro</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-card" aria-labelledby="interest-title">
+          <h2 id="interest-title">interes inmobiliario</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Operacion</span>
+              <select name="operation" [(ngModel)]="newContact.operation">
+                <option>Comprador</option>
+                <option>Vendedor</option>
+                <option>Renta</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Tipo de inmueble</span>
+              <select name="propertyType" [(ngModel)]="newContact.propertyType">
+                <option>Casa</option>
+                <option>Departamento</option>
+                <option>Terreno</option>
+                <option>Local</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Presupuesto minimo</span>
+              <input name="minBudget" type="number" min="0" [(ngModel)]="newContact.minBudget" />
+            </label>
+            <label class="form-field">
+              <span>Presupuesto maximo</span>
+              <input name="maxBudget" type="number" min="0" [(ngModel)]="newContact.maxBudget" />
+            </label>
+            <label class="form-field">
+              <span>Zona de preferencia</span>
+              <select name="zone" [(ngModel)]="newContact.zone">
+                <option>Comprador</option>
+                <option>Centro</option>
+                <option>Norte</option>
+                <option>Sur</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Recamaras</span>
+              <select name="bedrooms" [(ngModel)]="newContact.bedrooms">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4+</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-card form-card--assignment" aria-labelledby="assignment-title">
+          <h2 id="assignment-title">interes inmobiliario</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Agente Responsable</span>
+              <select name="agent" [(ngModel)]="newContact.agent">
+                <option>Luis Ortega</option>
+                <option>Ana Barajas</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Estatus</span>
+              <select name="status" [(ngModel)]="newContact.status">
+                <option>Nuevo</option>
+                <option>Calificado</option>
+                <option>En seguimiento</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <div class="contacts__footer new-contact__footer">
+          <button class="contacts__cancel-button" type="button" (click)="closeContactForm()">
+            Cancelar
+          </button>
+          <button class="contacts__new-button" type="submit">
+            {{ editingContactId ? 'Guardar cambios' : 'Guardar contacto' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  } @else {
+    <div class="contacts__content">
+      <h1 id="contacts-title">Contactos</h1>
+
+      <form class="filters" aria-label="Filtros de contactos">
+        <label class="filters__field filters__field--search">
+          <span>Busqueda</span>
+          <input
+            type="search"
+            name="contactSearch"
+            placeholder="Nombre, Teléfono, Correo"
+            [(ngModel)]="contactSearch"
+          />
+        </label>
+        <label class="filters__field">
+          <span>Tipo</span>
+          <select name="contactTypeFilter" [(ngModel)]="selectedContactType">
+            <option value="Todos">Todos</option>
+            @for (type of contactTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+        <label class="filters__field">
+          <span>Estatus</span>
+          <select name="contactStatusFilter" [(ngModel)]="selectedContactStatus">
+            <option value="Todos">Todos</option>
+            @for (status of contactStatuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </label>
+        <label class="filters__field">
+          <span>Agente</span>
+          <select name="contactAgentFilter" [(ngModel)]="selectedAgent">
+            <option value="Todos">Todos</option>
+            @for (agent of contactAgents; track agent) {
+              <option [value]="agent">{{ agent }}</option>
+            }
+          </select>
+        </label>
+      </form>
+
+      <div class="contacts-table__surface">
+        <div class="contacts-table__scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Estatus</th>
+                <th scope="col">Inmueble</th>
+                <th scope="col">Agente</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (contact of filteredContacts; track contact.id) {
+                <tr>
+                  <td>{{ contact.name }}</td>
+                  <td>{{ contact.phone }}</td>
+                  <td>{{ contact.type }}</td>
+                  <td>{{ contact.status }}</td>
+                  <td>{{ contact.property }}</td>
+                  <td>{{ contact.agent }}</td>
+                  <td class="contacts-table__actions">
+                    <div class="row-actions">
+                      <button
+                        class="row-action row-action--view"
+                        type="button"
+                        (click)="selectedContact = contact"
+                        [attr.aria-label]="'Ver contacto ' + contact.id"
+                        title="Ver contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </button>
+                      <button
+                        class="row-action row-action--edit"
+                        type="button"
+                        (click)="editContact(contact)"
+                        [attr.aria-label]="'Editar contacto ' + contact.id"
+                        title="Editar contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" />
+                        </svg>
+                      </button>
+                      <button
+                        class="row-action row-action--delete"
+                        type="button"
+                        (click)="contactPendingDelete = contact"
+                        [attr.aria-label]="'Borrar contacto ' + contact.id"
+                        title="Borrar contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7">No hay contactos que coincidan con los filtros.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="contacts__footer">
+        <button class="contacts__new-button" type="button" (click)="showNewContactForm = true">
+          Contacto nuevo
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (contactPendingDelete; as contact) {
+    <div class="contact-dialog__backdrop">
+      <button
+        class="contact-dialog__backdrop-dismiss"
+        type="button"
+        aria-label="Cerrar diálogo de confirmación"
+        (click)="contactPendingDelete = null"
+      ></button>
+      <section
+        class="contact-dialog contact-dialog--confirm"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-contact-title"
+      >
+        <h2 id="delete-contact-title">¿Borrar este contacto?</h2>
+        <p>Se eliminará {{ contact.name }} {{ contact.surname }} ({{ contact.id }}).</p>
+        <div class="contact-dialog__actions">
+          <button
+            class="contacts__cancel-button"
+            type="button"
+            (click)="contactPendingDelete = null"
+          >
+            Cancelar
+          </button>
+          <button
+            class="row-action row-action--delete"
+            type="button"
+            (click)="confirmDeleteContact()"
+          >
+            Borrar
+          </button>
+        </div>
+      </section>
+    </div>
+  }
 </section>
