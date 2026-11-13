@@ -1,11 +1,25 @@
-.app-shell__content {
-  margin: 0 auto;
-  max-width: 72rem;
-  padding: 2rem 1.25rem 3rem;
+.app-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f4f5f7;
 }
 
-@media (min-width: 48rem) {
-  .app-shell__content {
-    padding-inline: 2rem;
+.sidebar-container {
+  width: 250px;
+  flex-shrink: 0;
+  transition: width 0.3s ease-in-out;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  height: 100vh;
+  transition: all 0.3s ease-in-out;
+}
+
+@media (max-width: 992px) {
+  .sidebar-container {
+    width: 80px;
   }
 }
