@@ -85,16 +85,35 @@
     .search-bar {
       display: flex;
       align-items: center;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      padding: 0.4rem 1rem;
+      min-height: 39px;
+      gap: 10px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: #eeeef0;
+
+      svg {
+        width: 17px;
+        height: 17px;
+        flex: 0 0 auto;
+        fill: none;
+        stroke: #888;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 1.8;
+      }
 
       input {
+        width: 200px;
         border: none;
         outline: none;
         background: transparent;
-        margin-right: 0.5rem;
+        color: var(--text-main);
+        font: inherit;
+      }
+
+      input::placeholder {
+        color: #888;
       }
     }
   }
