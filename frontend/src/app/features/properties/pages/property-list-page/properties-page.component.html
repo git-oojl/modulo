@@ -9,60 +9,77 @@
 
   <!-- FILTROS -->
   <div class="filters-bar">
-    <select
-      class="filter-select"
-      aria-label="Estado"
-      [(ngModel)]="filtroEstado"
-      (change)="reiniciarPagina()"
-    >
-      @for (estado of estadosTabs; track estado.nombre) {
-        <option [value]="estado.nombre">Estado: {{ estado.nombre }} ({{ estado.cantidad }})</option>
-      }
-    </select>
+    <label class="filter-field">
+      <span>Estado</span>
+      <select
+        class="filter-select"
+        aria-label="Estado"
+        [(ngModel)]="filtroEstado"
+        (change)="reiniciarPagina()"
+      >
+        @for (estado of estadosTabs; track estado.nombre) {
+          <option [value]="estado.nombre">{{ estado.nombre }} ({{ estado.cantidad }})</option>
+        }
+      </select>
+    </label>
 
-    <select class="filter-select" [(ngModel)]="filtroSector" (change)="reiniciarPagina()">
-      <option value="">Sector (Todos)</option>
-      @for (sector of sectoresUnicos; track sector) {
-        <option [value]="sector">{{ sector }}</option>
-      }
-    </select>
+    <label class="filter-field">
+      <span>Sector</span>
+      <select class="filter-select" [(ngModel)]="filtroSector" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (sector of sectoresUnicos; track sector) {
+          <option [value]="sector">{{ sector }}</option>
+        }
+      </select>
+    </label>
 
-    <select class="filter-select" [(ngModel)]="filtroOperacion" (change)="reiniciarPagina()">
-      <option value="">Operación (Todas)</option>
-      @for (op of operacionesUnicas; track op) {
-        <option [value]="op">{{ op }}</option>
-      }
-    </select>
+    <label class="filter-field">
+      <span>Operación</span>
+      <select class="filter-select" [(ngModel)]="filtroOperacion" (change)="reiniciarPagina()">
+        <option value="">Todas</option>
+        @for (op of operacionesUnicas; track op) {
+          <option [value]="op">{{ op }}</option>
+        }
+      </select>
+    </label>
 
-    <select class="filter-select" [(ngModel)]="filtroTipo" (change)="reiniciarPagina()">
-      <option value="">Tipo (Todos)</option>
-      @for (tipo of tiposUnicos; track tipo) {
-        <option [value]="tipo">{{ tipo }}</option>
-      }
-    </select>
+    <label class="filter-field">
+      <span>Tipo</span>
+      <select class="filter-select" [(ngModel)]="filtroTipo" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (tipo of tiposUnicos; track tipo) {
+          <option [value]="tipo">{{ tipo }}</option>
+        }
+      </select>
+    </label>
 
-    <select class="filter-select" [(ngModel)]="filtroAgente" (change)="reiniciarPagina()">
-      <option value="">Agente (Todos)</option>
-      @for (agente of agentesUnicos; track agente) {
-        <option [value]="agente">{{ agente }}</option>
-      }
-    </select>
+    <label class="filter-field">
+      <span>Agente</span>
+      <select class="filter-select" [(ngModel)]="filtroAgente" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (agente of agentesUnicos; track agente) {
+          <option [value]="agente">{{ agente }}</option>
+        }
+      </select>
+    </label>
 
-    <div class="search-local">
-      <i class="fa-solid fa-magnifying-glass" style="color: #999"></i>
-      <input
-        type="text"
-        placeholder="Clave, dirección o título..."
-        [(ngModel)]="filtroBusqueda"
-        (input)="reiniciarPagina()"
-      />
-    </div>
-
+    <label class="filter-field filter-field--search">
+      <span>Búsqueda</span>
+      <div class="search-local">
+        <i class="fa-solid fa-magnifying-glass" style="color: #999"></i>
+        <input
+          type="text"
+          placeholder="Clave, dirección o título..."
+          [(ngModel)]="filtroBusqueda"
+          (input)="reiniciarPagina()"
+        />
+      </div>
+    </label>
   </div>
 
   <div class="filters-footer">
     <button class="btn-clear" type="button" (click)="limpiarFiltros()">
-      <i class="fa-solid fa-trash-can"></i> Limpiar
+      Limpiar
     </button>
   </div>
 
