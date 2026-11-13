@@ -26,6 +26,7 @@ export const routes: Routes = [
     path: 'app',
     component: AppShellComponent,
     canActivate: [authGuard],
+    runGuardsAndResolvers: 'always',
     children: [
       ...dashboardRoutes,
       ...contactsRoutes,

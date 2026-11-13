@@ -25,6 +25,7 @@ import { devViews } from './dev-view.registry';
 export class DevViewSwitcherComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private pendingDevNavigation = 0;
   readonly auth = inject(AuthService);
   readonly backend = inject(BackendHealthService);
   readonly featureFlags = inject(FeatureFlagsService);
@@ -45,7 +46,11 @@ export class DevViewSwitcherComponent implements OnInit {
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((event) => this.syncSelectedView(event.urlAfterRedirects));
+      .subscribe((event) => {
+        if (this.pendingDevNavigation === 0) {
+          this.syncSelectedView(event.urlAfterRedirects);
+        }
+      });
     void this.backend.refresh();
   }
 
@@ -58,23 +63,31 @@ export class DevViewSwitcherComponent implements OnInit {
       this.featureFlags.setDevelopmentCatalogueEnabled(false);
     }
 
-    void this.router.navigateByUrl(this.router.url);
+    this.navigateToSelectedView();
   }
 
   selectView(viewId: string): void {
     this.selectedViewId.set(viewId);
-    const view = devViews.find((candidate) => candidate.id === viewId) ?? devViews[0];
-    void this.router.navigateByUrl(view.path);
+    this.navigateToSelectedView();
   }
 
   selectPreviewViewer(viewer: string): void {
     const selectedViewer = viewer as PreviewViewer;
     this.auth.setPreviewViewer(selectedViewer);
-    void this.router.navigateByUrl(this.router.url);
+    this.navigateToSelectedView();
   }
 
   selectedView() {
     return devViews.find((view) => view.id === this.selectedViewId()) ?? devViews[0];
+  }
+
+  private navigateToSelectedView(): void {
+    const navigationId = ++this.pendingDevNavigation;
+    void this.router.navigateByUrl(this.selectedView().path).finally(() => {
+      if (navigationId === this.pendingDevNavigation) {
+        this.pendingDevNavigation = 0;
+      }
+    });
   }
 
   private syncSelectedView(url: string): void {

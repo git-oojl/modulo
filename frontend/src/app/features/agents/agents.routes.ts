@@ -7,6 +7,7 @@ export const agentsRoutes: Routes = [
     path: 'asesores',
     component: AgentDirectoryPageComponent,
     canActivate: [roleGuard],
+    runGuardsAndResolvers: 'always',
     data: { roles: ['gerencia', 'administrador'] },
   },
 ];

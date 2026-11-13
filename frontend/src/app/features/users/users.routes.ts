@@ -7,6 +7,7 @@ export const usersRoutes: Routes = [
     path: 'usuarios',
     component: UserListPageComponent,
     canActivate: [roleGuard],
+    runGuardsAndResolvers: 'always',
     data: { roles: ['administrador'] },
   },
 ];

@@ -11,6 +11,7 @@ export const closingsRoutes: Routes = [
     path: 'cierres/nuevo',
     component: ClosingCreatePageComponent,
     canActivate: [roleGuard],
+    runGuardsAndResolvers: 'always',
     data: { roles: ['gerencia', 'administrador'] },
   },
   { path: 'cierres/:id', component: ClosingDetailPageComponent },
@@ -18,6 +19,7 @@ export const closingsRoutes: Routes = [
     path: 'cierres/:id/editar',
     component: ClosingEditPageComponent,
     canActivate: [roleGuard],
+    runGuardsAndResolvers: 'always',
     data: { roles: ['gerencia', 'administrador'] },
   },
 ];

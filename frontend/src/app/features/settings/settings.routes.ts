@@ -7,6 +7,7 @@ export const settingsRoutes: Routes = [
     path: 'configuracion',
     component: SettingsPageComponent,
     canActivate: [roleGuard],
+    runGuardsAndResolvers: 'always',
     data: { roles: ['administrador'] },
   },
 ];
