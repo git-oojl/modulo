@@ -7,6 +7,7 @@ export interface DevView {
   path: string;
   filePath: string;
   roles?: UserRole[];
+  publicPreview?: boolean;
 }
 
 const allRoles: UserRole[] = ['asesor', 'gerencia', 'administrador'];
@@ -22,6 +23,33 @@ export const devViews: DevView[] = [
     label: 'Iniciar sesión',
     path: '/login',
     filePath: 'frontend/src/app/features/auth/pages/login-page/login-page.component.ts',
+    publicPreview: true,
+  },
+  {
+    id: 'catalogue',
+    group: 'Catálogo opcional',
+    label: 'Catálogo público',
+    path: '/',
+    filePath: 'frontend/src/app/features/catalog/pages/catalogue-page/catalogue-page.component.ts',
+    publicPreview: true,
+  },
+  {
+    id: 'public-property',
+    group: 'Catálogo opcional',
+    label: 'Ficha pública de propiedad',
+    path: '/propiedades/demo-propiedad',
+    filePath:
+      'frontend/src/app/features/catalog/pages/public-property-detail-page/public-property-detail-page.component.ts',
+    publicPreview: true,
+  },
+  {
+    id: 'privacy-notice',
+    group: 'Catálogo opcional',
+    label: 'Aviso de privacidad',
+    path: '/aviso-de-privacidad',
+    filePath:
+      'frontend/src/app/features/catalog/pages/privacy-notice-page/privacy-notice-page.component.ts',
+    publicPreview: true,
   },
   {
     id: 'dashboard',

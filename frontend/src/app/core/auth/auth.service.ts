@@ -25,12 +25,21 @@ export class AuthService {
   }
 
   /** Development-preview control only; backend permissions remain authoritative. */
-  setDevelopmentRole(role: AuthenticatedUser['role']): void {
+  setDevelopmentRole(role: AuthenticatedUser['role'] | 'publico'): void {
     if (!isDevMode()) {
       return;
     }
 
-    this.userState.update((user) => (user ? { ...user, role } : user));
+    if (role === 'publico') {
+      this.userState.set(null);
+      return;
+    }
+
+    this.userState.update((user) => ({
+      id: user?.id ?? 'scaffold-user',
+      displayName: user?.displayName ?? 'Vista de preparación',
+      role,
+    }));
   }
 
   // TODO(auth): replace with CSRF-aware calls to /api/v1/auth/.

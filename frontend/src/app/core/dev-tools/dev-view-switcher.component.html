@@ -9,7 +9,7 @@
     </header>
 
     <label class="dev-switcher__field">
-      <span>Vista</span>
+      <span>Vista · cambia de inmediato</span>
       <select [ngModel]="selectedViewId()" (ngModelChange)="selectView($event)">
         @for (view of views; track view.id) {
           <option [value]="view.id">{{ view.group }} — {{ view.label }}</option>
@@ -18,8 +18,8 @@
     </label>
 
     <label class="dev-switcher__field">
-      <span>Simular rol</span>
-      <select [ngModel]="auth.user()?.role" (ngModelChange)="selectRole($event)">
+      <span>Ver como</span>
+      <select [ngModel]="selectedViewer()" (ngModelChange)="selectRole($event)">
         @for (role of roles; track role.value) {
           <option [value]="role.value">{{ role.label }}</option>
         }
@@ -27,18 +27,24 @@
     </label>
 
     <p class="dev-switcher__access" [class.dev-switcher__access--blocked]="!viewIsAllowed()">
-      {{
-        viewIsAllowed()
-          ? 'El rol puede abrir esta ruta.'
-          : 'La guarda de rol enviará esta vista a 403.'
-      }}
+      {{ accessMessage() }}
     </p>
+
+    <label class="dev-switcher__catalogue-toggle">
+      <input
+        type="checkbox"
+        [ngModel]="featureFlags.publicCatalogueEnabled()"
+        (ngModelChange)="featureFlags.setDevelopmentCatalogueEnabled($event)"
+      />
+      <span>Catálogo público disponible en este preview</span>
+    </label>
 
     <section
       class="dev-switcher__health"
       [class]="'dev-switcher__health dev-switcher__health--' + backend.health().state"
     >
       <div>
+        <small>Servicios</small>
         <strong>{{ backend.health().api }}</strong>
         <span>{{ backend.health().database }}</span>
       </div>
@@ -55,7 +61,7 @@
     <section class="dev-switcher__file">
       <span>Archivo de la vista</span>
       <code>{{ selectedView().filePath }}</code>
-      <small>{{ selectedView().path }}</small>
+      <small>Ruta: {{ selectedView().path }}</small>
     </section>
   </aside>
 } @else {

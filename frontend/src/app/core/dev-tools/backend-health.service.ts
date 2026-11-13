@@ -35,14 +35,14 @@ export class BackendHealthService {
 
       this.health.set({
         state: response.ok && databaseOnline ? 'online' : 'degraded',
-        api: response.ok ? 'API disponible' : `API respondió ${response.status}`,
+        api: response.ok ? 'Django API disponible' : `Django API respondió ${response.status}`,
         database: databaseOnline ? 'PostgreSQL disponible' : 'PostgreSQL no disponible',
         detail: 'GET /api/v1/health/',
       });
     } catch {
       this.health.set({
         state: 'offline',
-        api: 'API no disponible',
+        api: 'Django API no disponible',
         database: 'PostgreSQL sin verificar',
         detail: 'No hubo respuesta de /api/v1/health/ en 3 segundos.',
       });
