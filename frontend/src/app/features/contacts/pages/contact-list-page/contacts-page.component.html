@@ -1,114 +1,7 @@
 <section class="contacts" aria-labelledby="contacts-title">
-  @if (selectedContact; as contact) {
-    <div class="contacts__content contact-detail">
-      <div class="contact-detail__breadcrumb">
-        <button type="button" (click)="selectedContact = null">Contactos</button>
-        <span aria-hidden="true">/</span>
-        <span>{{ contact.name }} {{ contact.surname }}</span>
-      </div>
-
-      <header class="contact-detail__header">
-        <div class="contact-detail__identity">
-          <div class="contact-detail__avatar" aria-hidden="true">
-            {{ contactInitials(contact) }}
-          </div>
-          <div>
-            <h1 id="contacts-title">{{ contact.name }} {{ contact.surname }}</h1>
-            <div class="contact-detail__tags">
-              <span>{{ contact.type }}</span>
-              <span>{{ contact.status }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="contact-detail__actions">
-          <a routerLink="/app/citas/nueva">Agendar cita</a>
-        </div>
-      </header>
-
-      <div class="contact-detail__layout">
-        <aside class="contact-detail__sidebar">
-          <section class="detail-card">
-            <h2>Datos de contacto</h2>
-            <dl>
-              <div>
-                <dt>Teléfono</dt>
-                <dd>{{ contact.phone || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Correo</dt>
-                <dd>{{ contact.email || '—' }}</dd>
-              </div>
-              <div>
-                <dt>Presupuesto</dt>
-                <dd>${{ contact.minBudget || 'MIN' }} – ${{ contact.maxBudget || 'MÁX' }}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section class="detail-card">
-            <h2>Registro</h2>
-            <dl>
-              <div>
-                <dt>Agente responsable</dt>
-                <dd>{{ contact.agent }}</dd>
-              </div>
-              <div>
-                <dt>ID del contacto</dt>
-                <dd>{{ contact.id }}</dd>
-              </div>
-              <div>
-                <dt>Fuente</dt>
-                <dd>{{ contact.source }}</dd>
-              </div>
-            </dl>
-          </section>
-        </aside>
-
-        <div class="contact-detail__main">
-          <section class="detail-card detail-card--appointments">
-            <h2>Citas</h2>
-            <div class="detail-appointments">
-              @for (appointment of detailAppointments; track appointment.title) {
-                <article class="detail-appointment">
-                  <div>
-                    <h3>{{ appointment.title }}</h3>
-                    <p>{{ appointment.details }}</p>
-                  </div>
-                  <span
-                    class="detail-appointment__status"
-                    [class.detail-appointment__status--confirmed]="
-                      appointment.status === 'Confirmada'
-                    "
-                  >
-                    {{ appointment.status }}
-                  </span>
-                </article>
-              }
-            </div>
-          </section>
-
-          <section class="detail-card detail-card--activities">
-            <h2>Actividades</h2>
-            <ol class="detail-activities">
-              @for (activity of detailActivities; track activity.title) {
-                <li>
-                  <span class="detail-activities__dot" aria-hidden="true"></span>
-                  <div>
-                    <h3>{{ activity.title }}</h3>
-                    <p>{{ activity.details }}</p>
-                  </div>
-                </li>
-              }
-            </ol>
-          </section>
-        </div>
-      </div>
-    </div>
-  } @else if (showNewContactForm) {
+  @if (showNewContactForm) {
     <div class="contacts__content new-contact">
-      <h1 class="new-contact__title" id="contacts-title">
-        {{ editingContactId ? 'Editar contacto' : 'Contacto nuevo' }}
-      </h1>
+      <h1 class="new-contact__title" id="contacts-title">Contacto nuevo</h1>
 
       <form class="new-contact__form" (ngSubmit)="saveNewContact()">
         <section class="form-card" aria-labelledby="personal-title">
@@ -123,11 +16,11 @@
               <input name="surname" [(ngModel)]="newContact.surname" />
             </label>
             <label class="form-field">
-              <span>Telefono</span>
+              <span>Teléfono</span>
               <input name="phone" type="tel" [(ngModel)]="newContact.phone" />
             </label>
             <label class="form-field">
-              <span>Correo electronico</span>
+              <span>Correo electrónico</span>
               <input name="email" type="email" [(ngModel)]="newContact.email" />
             </label>
             <label class="form-field">
@@ -151,10 +44,10 @@
         </section>
 
         <section class="form-card" aria-labelledby="interest-title">
-          <h2 id="interest-title">interes inmobiliario</h2>
+          <h2 id="interest-title">Interés inmobiliario</h2>
           <div class="form-card__grid">
             <label class="form-field">
-              <span>Operacion</span>
+              <span>Operación</span>
               <select name="operation" [(ngModel)]="newContact.operation">
                 <option>Comprador</option>
                 <option>Vendedor</option>
@@ -171,11 +64,11 @@
               </select>
             </label>
             <label class="form-field">
-              <span>Presupuesto minimo</span>
+              <span>Presupuesto mínimo</span>
               <input name="minBudget" type="number" min="0" [(ngModel)]="newContact.minBudget" />
             </label>
             <label class="form-field">
-              <span>Presupuesto maximo</span>
+              <span>Presupuesto máximo</span>
               <input name="maxBudget" type="number" min="0" [(ngModel)]="newContact.maxBudget" />
             </label>
             <label class="form-field">
@@ -188,7 +81,7 @@
               </select>
             </label>
             <label class="form-field">
-              <span>Recamaras</span>
+              <span>Recámaras</span>
               <select name="bedrooms" [(ngModel)]="newContact.bedrooms">
                 <option>1</option>
                 <option>2</option>
@@ -200,10 +93,10 @@
         </section>
 
         <section class="form-card form-card--assignment" aria-labelledby="assignment-title">
-          <h2 id="assignment-title">interes inmobiliario</h2>
+          <h2 id="assignment-title">Asignación y estado</h2>
           <div class="form-card__grid">
             <label class="form-field">
-              <span>Agente Responsable</span>
+              <span>Agente responsable</span>
               <select name="agent" [(ngModel)]="newContact.agent">
                 <option>Luis Ortega</option>
                 <option>Ana Barajas</option>
@@ -224,9 +117,7 @@
           <button class="contacts__cancel-button" type="button" (click)="closeContactForm()">
             Cancelar
           </button>
-          <button class="contacts__new-button" type="submit">
-            {{ editingContactId ? 'Guardar cambios' : 'Guardar contacto' }}
-          </button>
+          <button class="contacts__new-button" type="submit">Guardar contacto</button>
         </div>
       </form>
     </div>
@@ -316,10 +207,9 @@
                   <td>{{ contact.agent }}</td>
                   <td class="contacts-table__actions">
                     <div class="row-actions">
-                      <button
+                      <a
                         class="row-action row-action--view"
-                        type="button"
-                        (click)="selectedContact = contact"
+                        [routerLink]="['/app/contactos', contact.id]"
                         [attr.aria-label]="'Ver contacto ' + contact.id"
                         title="Ver contacto"
                       >
@@ -327,18 +217,17 @@
                           <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
                           <circle cx="12" cy="12" r="3" />
                         </svg>
-                      </button>
-                      <button
+                      </a>
+                      <a
                         class="row-action row-action--edit"
-                        type="button"
-                        (click)="editContact(contact)"
+                        [routerLink]="['/app/contactos', contact.id, 'editar']"
                         [attr.aria-label]="'Editar contacto ' + contact.id"
                         title="Editar contacto"
                       >
                         <svg viewBox="0 0 24 24" aria-hidden="true">
                           <path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" />
                         </svg>
-                      </button>
+                      </a>
                       <button
                         class="row-action row-action--delete"
                         type="button"
@@ -362,7 +251,6 @@
           </table>
         </div>
       </div>
-
     </div>
   }
 
