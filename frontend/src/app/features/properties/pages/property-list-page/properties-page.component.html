@@ -7,21 +7,19 @@
     </button>
   </div>
 
-  <!-- PESTAÑAS (TABS DINÁMICAS) -->
-  <div class="tabs">
-    @for (tab of estadosTabs; track tab.nombre) {
-      <button
-        class="tab"
-        [class.active]="filtroEstado === tab.nombre"
-        (click)="cambiarEstado(tab.nombre)"
-      >
-        {{ tab.nombre }} <span class="badge">{{ tab.cantidad }}</span>
-      </button>
-    }
-  </div>
-
   <!-- FILTROS -->
   <div class="filters-bar">
+    <select
+      class="filter-select"
+      aria-label="Estado"
+      [(ngModel)]="filtroEstado"
+      (change)="reiniciarPagina()"
+    >
+      @for (estado of estadosTabs; track estado.nombre) {
+        <option [value]="estado.nombre">Estado: {{ estado.nombre }} ({{ estado.cantidad }})</option>
+      }
+    </select>
+
     <select class="filter-select" [(ngModel)]="filtroSector" (change)="reiniciarPagina()">
       <option value="">Sector (Todos)</option>
       @for (sector of sectoresUnicos; track sector) {
@@ -93,7 +91,7 @@
             <td class="actions">
               <!-- BOTONES EDITAR Y ELIMINAR -->
               <button
-                class="action-icon"
+                class="action-icon action-icon--edit"
                 type="button"
                 aria-label="Editar"
                 (click)="abrirModalEditar(prop)"
@@ -101,7 +99,7 @@
                 <i class="fa-regular fa-pen-to-square" aria-hidden="true"></i>
               </button>
               <button
-                class="action-icon"
+                class="action-icon action-icon--delete"
                 type="button"
                 aria-label="Eliminar"
                 (click)="eliminarPropiedad(prop.id)"

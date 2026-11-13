@@ -220,14 +220,14 @@ h1 {
 
 .filters {
   display: grid;
-  max-width: 56rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: none;
+  grid-template-columns: minmax(20rem, 2fr) repeat(3, minmax(9rem, 1fr));
   gap: 1rem;
   padding: 1.25rem;
 }
 
 .filters__field--search {
-  grid-column: span 2;
+  grid-column: auto;
 }
 
 .filters__field {
@@ -294,16 +294,16 @@ table {
 th,
 td {
   overflow: hidden;
-  padding: 0 16px;
+  padding: 15px 16px;
   text-overflow: ellipsis;
 }
 
 th {
-  height: 37px;
+  height: auto;
   border-bottom: 1px solid #e0e0e1;
   background: #f4f5f7;
   color: #7a7a7a;
-  font-size: 0.8rem;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -318,8 +318,8 @@ th:last-child {
 }
 
 td {
-  height: 40px;
-  font-size: 0.875rem;
+  height: auto;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -372,11 +372,13 @@ td:nth-child(7) {
 
 .row-action {
   display: inline-grid;
-  width: 28px;
-  height: 28px;
+  width: 2rem;
+  height: 2rem;
   place-items: center;
   border: 0;
-  border-radius: 4px;
+  border-radius: 8px;
+  background: #f4f5f7;
+  color: #4e3a4c;
   cursor: pointer;
   padding: 5px;
 }
@@ -392,18 +394,19 @@ td:nth-child(7) {
 }
 
 .row-action--view {
-  background: #f0e5f1;
-  color: #63005f;
+  color: #790069;
 }
 
 .row-action--edit {
-  background: #eeeef0;
-  color: #333;
+  color: #4e3a4c;
 }
 
 .row-action--delete {
-  background: #fde9e9;
   color: #a32121;
+}
+
+.row-action--delete:hover {
+  background: #fde9e9;
 }
 
 .row-action:hover,
@@ -422,13 +425,20 @@ td:nth-child(7) {
   height: 42px;
   border: 0;
   border-radius: 8px;
-  background: #a92f94;
-  color: #fff;
+  background: #fff;
+  color: #4e3a4c;
+  border: 1px solid #dedee0;
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0 1.2rem;
+}
+
+.contacts__new-button:hover {
+  border-color: #c89bd2;
+  background: #f7eff6;
+  color: #790069;
 }
 
 .contacts__cancel-button {

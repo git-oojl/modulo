@@ -182,8 +182,9 @@
   min-height: 100%;
   margin: 0 auto;
   padding: 2rem 3rem;
-  background-color: var(--modulo-lilac-100);
+  background-color: #f4f5f7;
   box-sizing: border-box;
+  font-family: Poppins, Arial, sans-serif;
 
   .page-header {
     display: flex;
@@ -201,9 +202,9 @@
     }
 
     .btn-primary {
-      background-color: #a92f94;
-      color: white;
-      border: none;
+      background-color: #fff;
+      color: #4e3a4c;
+      border: 1px solid #dedee0;
       padding: 0.6rem 1.2rem;
       border-radius: 8px;
       font-size: 0.9rem;
@@ -214,7 +215,9 @@
       gap: 8px;
 
       &:hover {
-        background-color: #8e237b;
+        border-color: #c89bd2;
+        background-color: #f7eff6;
+        color: #790069;
       }
     }
   }
@@ -259,7 +262,7 @@
   /* FILTROS */
   .filters-bar {
     display: grid;
-    max-width: 58rem;
+    max-width: 64rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.875rem;
     background: white;
@@ -380,6 +383,15 @@
           &:hover {
             background: #f3e5f5;
             color: #a92f94;
+          }
+        }
+
+        .action-icon--delete {
+          color: #a32121;
+
+          &:hover {
+            background: #fde9e9;
+            color: #a32121;
           }
         }
 
