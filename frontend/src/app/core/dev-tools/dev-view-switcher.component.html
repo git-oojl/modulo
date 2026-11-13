@@ -1,18 +1,14 @@
-<button class="dev-switcher__toggle" type="button" (click)="isOpen.set(!isOpen())">
-  {{ isOpen() ? 'Cerrar herramientas' : 'Dev tools' }}
-</button>
-
 @if (isOpen()) {
   <aside class="dev-switcher" aria-label="Herramientas de desarrollo">
-    <header>
+    <header class="dev-switcher__header">
       <div>
-        <strong>Modulo: vista de desarrollo</strong>
-        <span>Solo aparece en compilaciones de desarrollo.</span>
+        <strong><span class="dev-switcher__dot"></span>Modulo dev</strong>
+        <span>Preview local · no producción</span>
       </div>
       <button type="button" aria-label="Cerrar herramientas" (click)="isOpen.set(false)">×</button>
     </header>
 
-    <label>
+    <label class="dev-switcher__field">
       <span>Vista</span>
       <select [ngModel]="selectedViewId()" (ngModelChange)="selectView($event)">
         @for (view of views; track view.id) {
@@ -21,7 +17,7 @@
       </select>
     </label>
 
-    <label>
+    <label class="dev-switcher__field">
       <span>Simular rol</span>
       <select [ngModel]="auth.user()?.role" (ngModelChange)="selectRole($event)">
         @for (role of roles; track role.value) {
@@ -30,7 +26,7 @@
       </select>
     </label>
 
-    <p [class.dev-switcher__access--blocked]="!viewIsAllowed()" class="dev-switcher__access">
+    <p class="dev-switcher__access" [class.dev-switcher__access--blocked]="!viewIsAllowed()">
       {{
         viewIsAllowed()
           ? 'El rol puede abrir esta ruta.'
@@ -46,18 +42,24 @@
         <strong>{{ backend.health().api }}</strong>
         <span>{{ backend.health().database }}</span>
       </div>
-      <small>{{ backend.health().detail }}</small>
-      <button type="button" (click)="backend.refresh()">Comprobar otra vez</button>
+      <button
+        type="button"
+        title="Comprobar servicios otra vez"
+        aria-label="Comprobar servicios otra vez"
+        (click)="backend.refresh()"
+      >
+        ↻
+      </button>
     </section>
 
     <section class="dev-switcher__file">
       <span>Archivo de la vista</span>
       <code>{{ selectedView().filePath }}</code>
-      <span>Ruta: {{ selectedView().path }}</span>
+      <small>{{ selectedView().path }}</small>
     </section>
-
-    <button class="dev-switcher__open" type="button" (click)="openSelectedView()">
-      Abrir vista
-    </button>
   </aside>
+} @else {
+  <button class="dev-switcher__toggle" type="button" (click)="isOpen.set(true)">
+    <span class="dev-switcher__dot"></span> DEV
+  </button>
 }

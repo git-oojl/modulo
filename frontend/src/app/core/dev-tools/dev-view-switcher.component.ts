@@ -41,18 +41,20 @@ export class DevViewSwitcherComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const currentView = devViews.find((view) => this.router.url.startsWith(view.path));
+    if (currentView) {
+      this.selectedViewId.set(currentView.id);
+    }
     void this.backend.refresh();
   }
 
   selectView(viewId: string): void {
     this.selectedViewId.set(viewId);
+    const view = this.selectedView();
+    void this.router.navigateByUrl(view.path);
   }
 
   selectRole(role: string): void {
     this.auth.setDevelopmentRole(role as UserRole);
-  }
-
-  openSelectedView(): void {
-    void this.router.navigateByUrl(this.selectedView().path);
   }
 }

@@ -1,79 +1,120 @@
 :host {
   position: fixed;
-  z-index: 1000;
   right: 1rem;
   bottom: 1rem;
-  font-family: system-ui, sans-serif;
+  z-index: 1000;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 .dev-switcher,
 .dev-switcher__toggle {
-  border: 1px solid #4c1d95;
-  border-radius: 0.75rem;
-  background: #24103f;
-  color: #fff;
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 25%);
-}
-
-.dev-switcher__toggle,
-.dev-switcher button,
-.dev-switcher select {
-  font: inherit;
-}
-
-.dev-switcher__toggle,
-.dev-switcher button {
-  cursor: pointer;
-}
-
-.dev-switcher__toggle {
-  padding: 0.625rem 0.875rem;
+  color: #f8fafc;
+  background: #111827;
+  border: 1px solid #7dd3fc;
+  box-shadow: 0 1.25rem 3.125rem rgb(15 23 42 / 35%);
 }
 
 .dev-switcher {
-  width: min(23rem, calc(100vw - 2rem));
-  margin-bottom: 0.5rem;
-  overflow: hidden;
-}
-
-.dev-switcher header,
-.dev-switcher label,
-.dev-switcher__health,
-.dev-switcher__file {
   display: grid;
-  gap: 0.375rem;
-  padding: 0.75rem;
+  width: min(21.25rem, calc(100vw - 2rem));
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 0.875rem;
 }
 
-.dev-switcher header {
-  grid-template-columns: 1fr auto;
-  background: #3b176b;
-}
-
-.dev-switcher header span,
-.dev-switcher label span,
-.dev-switcher__health span,
-.dev-switcher__health small,
-.dev-switcher__file span {
-  color: #d8c5f7;
+.dev-switcher__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  cursor: pointer;
+  border-radius: 999px;
+  font: inherit;
   font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
-.dev-switcher select,
-.dev-switcher__health,
-.dev-switcher__file {
-  border-radius: 0.375rem;
+.dev-switcher__toggle:hover,
+.dev-switcher__toggle:focus-visible {
+  background: #1e293b;
 }
 
-.dev-switcher select {
-  border: 0;
-  padding: 0.5rem;
+.dev-switcher__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dev-switcher__header strong,
+.dev-switcher__header span {
+  display: block;
+}
+
+.dev-switcher__header strong {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.9rem;
+}
+
+.dev-switcher__header span,
+.dev-switcher__field > span,
+.dev-switcher__file > span,
+.dev-switcher__file small {
+  color: #cbd5e1;
+  font-size: 0.72rem;
+}
+
+.dev-switcher__header button,
+.dev-switcher__health button {
+  display: inline-grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  background: rgb(255 255 255 / 8%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  place-items: center;
+}
+
+.dev-switcher__header button:hover,
+.dev-switcher__health button:hover {
+  background: rgb(125 211 252 / 22%);
+}
+
+.dev-switcher__dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #7dd3fc;
+  border-radius: 999px;
+  box-shadow: 0 0 0 0.1875rem rgb(125 211 252 / 16%);
+}
+
+.dev-switcher__field {
+  display: grid;
+  gap: 0.3125rem;
+}
+
+.dev-switcher__field select {
+  width: 100%;
+  padding: 0.5625rem 0.625rem;
+  color: #0f172a;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  font: inherit;
+  font-size: 0.82rem;
 }
 
 .dev-switcher__access {
-  margin: 0 0.75rem;
+  margin: -0.125rem 0 0;
   color: #bbf7d0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .dev-switcher__access--blocked {
@@ -81,42 +122,60 @@
 }
 
 .dev-switcher__health {
-  margin: 0.75rem;
-  background: #312e81;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.625rem 0.6875rem;
+  background: #1e293b;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.625rem;
+}
+
+.dev-switcher__health strong,
+.dev-switcher__health span {
+  display: block;
+}
+
+.dev-switcher__health strong {
+  font-size: 0.78rem;
+}
+
+.dev-switcher__health span {
+  margin-top: 0.125rem;
+  color: #cbd5e1;
+  font-size: 0.7rem;
 }
 
 .dev-switcher__health--online {
-  background: #14532d;
+  border-color: rgb(74 222 128 / 55%);
 }
 
 .dev-switcher__health--degraded,
 .dev-switcher__health--offline {
-  background: #7f1d1d;
-}
-
-.dev-switcher__health button,
-.dev-switcher__open,
-.dev-switcher header button {
-  border: 0;
-  border-radius: 0.375rem;
-  padding: 0.45rem 0.625rem;
+  border-color: rgb(248 113 113 / 55%);
 }
 
 .dev-switcher__file {
-  margin: 0.75rem;
-  background: #12051f;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.625rem 0.6875rem;
+  background: rgb(15 23 42 / 80%);
+  border: 1px dashed rgb(125 211 252 / 55%);
+  border-radius: 0.625rem;
 }
 
 .dev-switcher__file code {
   overflow-wrap: anywhere;
-  color: #f5d0fe;
-  font-size: 0.7rem;
+  color: #e0f2fe;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.4;
 }
 
-.dev-switcher__open {
-  width: calc(100% - 1.5rem);
-  margin: 0 0.75rem 0.75rem;
-  background: #e879f9;
-  color: #2e1065;
-  font-weight: 700;
+@media (max-width: 30rem) {
+  :host {
+    right: 0.5rem;
+    bottom: 0.5rem;
+  }
 }
