@@ -5,7 +5,8 @@
 
 .contacts {
   min-height: 100vh;
-  color: #333;
+  background: #f4f5f7;
+  color: #1a1a1a;
   font-family: Poppins, Arial, sans-serif;
 }
 
@@ -109,28 +110,31 @@
 }
 
 .contacts__content {
-  padding: 18px 18px 5px 12px;
+  width: 100%;
+  max-width: 87.5rem;
+  margin: 0 auto;
+  padding: 2rem 3rem;
+  box-sizing: border-box;
 }
 
 h1 {
-  margin: 0 0 17px;
-  color: #888;
-  font-size: 25px;
-  font-weight: 400;
+  margin: 0 0 1.5rem;
+  color: #1a1a1a;
+  font-size: 1.8rem;
+  font-weight: 600;
   line-height: 1.35;
 }
 
 .new-contact {
-  padding: 8px 13px 16px 19px;
+  padding: 0;
 }
 
 .new-contact__title {
-  margin-bottom: 22px;
-  color: #191919;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1.4;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.35;
 }
 
 .new-contact__form {
@@ -152,7 +156,7 @@ h1 {
   margin: 0 0 8px;
   border-bottom: 1px solid #e1e1e1;
   color: #303030;
-  font-size: 12px;
+  font-size: 0.9rem;
   font-weight: 600;
   line-height: 1.5;
   padding-bottom: 8px;
@@ -171,7 +175,7 @@ h1 {
   flex-direction: column;
   gap: 4px;
   color: #333;
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 400;
 }
 
@@ -186,7 +190,7 @@ h1 {
   background: #eeeef0;
   color: #282828;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.875rem;
   padding: 0 17px;
 }
 
@@ -228,7 +232,7 @@ h1 {
   flex-direction: column;
   gap: 17px;
   color: #333;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -247,7 +251,7 @@ h1 {
   background-color: #eeeef0;
   color: #333;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.875rem;
   font-weight: 400;
 }
 
@@ -257,7 +261,7 @@ h1 {
 
 .filters__field input::placeholder {
   color: #aaa;
-  font-size: 9px;
+  font-size: 0.8rem;
 }
 
 .filters__field select {
@@ -295,7 +299,7 @@ th {
   border-bottom: 1px solid #800080;
   background: #800080;
   color: #fff;
-  font-size: 12px;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -311,7 +315,7 @@ th:last-child {
 
 td {
   height: 40px;
-  font-size: 12px;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
@@ -566,7 +570,7 @@ td:nth-child(7) {
   }
 
   .contacts__content {
-    padding-right: 12px;
+    padding: 1.25rem;
   }
 
   .new-contact {

@@ -170,12 +170,20 @@
   }
 }
 
-/* 🟢 ÁREA DE CONTENIDO */
+:host {
+  display: block;
+  min-height: 100%;
+}
+
+/* ÁREA DE CONTENIDO */
 .content-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 30px;
+  width: 100%;
+  max-width: 1400px;
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 2rem 3rem;
   background-color: var(--modulo-lilac-100);
+  box-sizing: border-box;
 
   .page-header {
     display: flex;
@@ -187,7 +195,7 @@
 
     h1 {
       color: var(--modulo-text);
-      font-size: 24px;
+      font-size: 1.8rem;
       font-weight: 600;
       margin: 0;
     }
@@ -572,46 +580,7 @@
    MEDIA QUERIES
    ========================================= */
 @media (max-width: 768px) {
-  .app-layout {
-    flex-direction: column;
-  }
-  .sidebar {
-    width: 100%;
-    height: auto;
-    padding: 10px 0;
-  }
-  .sidebar .menu {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 10px;
-  }
-  .sidebar .menu .menu-item.active {
-    border-radius: 20px;
-    margin-right: 0;
-  }
-  .sidebar .sidebar-footer {
-    display: none;
-  }
-  .main-wrapper {
-    height: auto;
-  }
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 15px;
-  }
-  .topbar .topbar-actions {
-    width: 100%;
-    justify-content: space-between;
-    margin-top: 10px;
-  }
-  .topbar .topbar-actions .search-box {
-    flex: 1;
-  }
-  .topbar .topbar-actions .search-box input {
-    width: 100%;
-  }
   .content-area {
-    padding: 15px;
+    padding: 1.25rem;
   }
 }
