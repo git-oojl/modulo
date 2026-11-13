@@ -301,6 +301,7 @@
       background: #eeeef0;
       font: inherit;
       font-size: 0.875rem;
+      font-weight: 400;
     }
 
     .search-local {
@@ -381,6 +382,10 @@
         white-space: nowrap;
       }
 
+      th:last-child {
+        text-align: center;
+      }
+
       td {
         padding: 15px;
         border-bottom: 1px solid var(--modulo-border);
@@ -400,6 +405,7 @@
 
       .actions {
         display: flex;
+        justify-content: center;
         gap: 15px;
         font-size: 18px;
         color: var(--modulo-muted);
