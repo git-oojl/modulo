@@ -145,11 +145,11 @@ h1 {
 .form-card {
   min-width: 0;
   min-height: 201px;
-  border: 1px solid #dedee0;
-  border-radius: 7px;
+  border: 0;
+  border-radius: 12px;
   background: #fff;
-  box-shadow: 0 2px 3px #0000001a;
-  padding: 11px 17px 16px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+  padding: 1.25rem;
 }
 
 .form-card h2 {
@@ -212,18 +212,22 @@ h1 {
 
 .filters,
 .contacts-table__surface {
-  border: 1px solid #e0e0e1;
-  border-radius: 7px;
+  border: 0;
+  border-radius: 12px;
   background: #fff;
-  box-shadow: 0 2px 3px #0000001a;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
 }
 
 .filters {
   display: grid;
-  grid-template-columns: 1.3fr 0.9fr 0.9fr 0.9fr;
-  gap: 20px;
-  min-height: 101px;
-  padding: 10px 13px 13px;
+  max-width: 56rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.filters__field--search {
+  grid-column: span 2;
 }
 
 .filters__field {
@@ -270,7 +274,7 @@ h1 {
 
 .contacts-table__surface {
   height: 396px;
-  margin-top: 31px;
+  margin-top: 1.5rem;
   overflow: hidden;
 }
 
@@ -296,9 +300,9 @@ td {
 
 th {
   height: 37px;
-  border-bottom: 1px solid #800080;
-  background: #800080;
-  color: #fff;
+  border-bottom: 1px solid #e0e0e1;
+  background: #f4f5f7;
+  color: #7a7a7a;
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -414,16 +418,17 @@ td:nth-child(7) {
 }
 
 .contacts__new-button {
-  width: 191px;
+  min-width: 10rem;
   height: 42px;
   border: 0;
   border-radius: 8px;
-  background: #c89bd2;
-  color: #59455d;
+  background: #a92f94;
+  color: #fff;
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0 1.2rem;
 }
 
 .contacts__cancel-button {
@@ -588,6 +593,10 @@ td:nth-child(7) {
     gap: 14px;
   }
 
+  .filters__field--search {
+    grid-column: span 2;
+  }
+
   .contacts-table__surface {
     padding: 0;
   }
@@ -602,6 +611,14 @@ td:nth-child(7) {
 }
 
 @media (max-width: 480px) {
+  .filters,
+  .filters__field--search {
+    grid-column: auto;
+  }
+
+  .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .form-card__grid,
   .form-card--assignment .form-card__grid {
     grid-template-columns: minmax(0, 1fr);
