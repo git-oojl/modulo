@@ -41,12 +41,13 @@
     </label>
 
     <label class="dev-switcher__field">
-      <span>Perfil de preview</span>
+      <span>Perfil</span>
       <select
         [disabled]="!auth.isPreviewMode()"
-        [ngModel]="auth.previewViewer()"
+        [ngModel]="auth.isPreviewMode() ? auth.previewViewer() : 'sin-sesion'"
         (ngModelChange)="selectPreviewViewer($event)"
       >
+        <option value="sin-sesion" disabled>Sin sesión</option>
         @for (viewer of viewers; track viewer.value) {
           <option [value]="viewer.value">{{ viewer.label }}</option>
         }
