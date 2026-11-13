@@ -1,0 +1,292 @@
+<section class="contacts" aria-labelledby="contacts-title">
+  @if (showNewContactForm) {
+    <div class="contacts__content new-contact">
+      <h1 class="new-contact__title" id="contacts-title">Contacto nuevo</h1>
+
+      <form class="new-contact__form" (ngSubmit)="saveNewContact()">
+        <section class="form-card" aria-labelledby="personal-title">
+          <h2 id="personal-title">Datos personales</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Nombre</span>
+              <input name="name" [(ngModel)]="newContact.name" />
+            </label>
+            <label class="form-field">
+              <span>Apellidos</span>
+              <input name="surname" [(ngModel)]="newContact.surname" />
+            </label>
+            <label class="form-field">
+              <span>Teléfono</span>
+              <input name="phone" type="tel" [(ngModel)]="newContact.phone" />
+            </label>
+            <label class="form-field">
+              <span>Correo electrónico</span>
+              <input name="email" type="email" [(ngModel)]="newContact.email" />
+            </label>
+            <label class="form-field">
+              <span>Tipo de Contacto</span>
+              <select name="contactType" [(ngModel)]="newContact.contactType">
+                <option>Comprador</option>
+                <option>Vendedor</option>
+                <option>Arrendatario</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Fuente</span>
+              <select name="source" [(ngModel)]="newContact.source">
+                <option>Recomendacion</option>
+                <option>Redes sociales</option>
+                <option>Pagina web</option>
+                <option>Otro</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-card" aria-labelledby="interest-title">
+          <h2 id="interest-title">Interés inmobiliario</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Operación</span>
+              <select name="operation" [(ngModel)]="newContact.operation">
+                <option>Comprador</option>
+                <option>Vendedor</option>
+                <option>Renta</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Tipo de inmueble</span>
+              <select name="propertyType" [(ngModel)]="newContact.propertyType">
+                <option>Casa</option>
+                <option>Departamento</option>
+                <option>Terreno</option>
+                <option>Local</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Presupuesto mínimo</span>
+              <input name="minBudget" type="number" min="0" [(ngModel)]="newContact.minBudget" />
+            </label>
+            <label class="form-field">
+              <span>Presupuesto máximo</span>
+              <input name="maxBudget" type="number" min="0" [(ngModel)]="newContact.maxBudget" />
+            </label>
+            <label class="form-field">
+              <span>Zona de preferencia</span>
+              <select name="zone" [(ngModel)]="newContact.zone">
+                <option>Comprador</option>
+                <option>Centro</option>
+                <option>Norte</option>
+                <option>Sur</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Recámaras</span>
+              <select name="bedrooms" [(ngModel)]="newContact.bedrooms">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4+</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="form-card form-card--assignment" aria-labelledby="assignment-title">
+          <h2 id="assignment-title">Asignación y estado</h2>
+          <div class="form-card__grid">
+            <label class="form-field">
+              <span>Agente responsable</span>
+              <select name="agent" [(ngModel)]="newContact.agent">
+                <option>Luis Ortega</option>
+                <option>Ana Barajas</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Estatus</span>
+              <select name="status" [(ngModel)]="newContact.status">
+                <option>Nuevo</option>
+                <option>Calificado</option>
+                <option>En seguimiento</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <div class="contacts__footer new-contact__footer">
+          <button class="contacts__cancel-button" type="button" (click)="closeContactForm()">
+            Cancelar
+          </button>
+          <button class="contacts__new-button" type="submit">Guardar contacto</button>
+        </div>
+      </form>
+    </div>
+  } @else {
+    <div class="contacts__content">
+      <div class="contacts__page-header">
+        <h1 id="contacts-title">Contactos</h1>
+        <button class="contacts__new-button" type="button" (click)="showNewContactForm = true">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          Contacto nuevo
+        </button>
+      </div>
+
+      <form class="filters" aria-label="Filtros de contactos">
+        <label class="filters__field filters__field--search">
+          <span>Búsqueda</span>
+          <div class="filters__search-control">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <input
+              type="search"
+              name="contactSearch"
+              placeholder="Nombre, Teléfono, Correo"
+              [(ngModel)]="contactSearch"
+            />
+          </div>
+        </label>
+        <label class="filters__field">
+          <span>Tipo</span>
+          <select name="contactTypeFilter" [(ngModel)]="selectedContactType">
+            <option value="Todos">Todos</option>
+            @for (type of contactTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+        <label class="filters__field">
+          <span>Estatus</span>
+          <select name="contactStatusFilter" [(ngModel)]="selectedContactStatus">
+            <option value="Todos">Todos</option>
+            @for (status of contactStatuses; track status) {
+              <option [value]="status">{{ status }}</option>
+            }
+          </select>
+        </label>
+        <label class="filters__field">
+          <span>Agente</span>
+          <select name="contactAgentFilter" [(ngModel)]="selectedAgent">
+            <option value="Todos">Todos</option>
+            @for (agent of contactAgents; track agent) {
+              <option [value]="agent">{{ agent }}</option>
+            }
+          </select>
+        </label>
+      </form>
+
+      <div class="filters__footer">
+        <button class="filters__clear" type="button" (click)="clearContactFilters()">
+          Limpiar
+        </button>
+      </div>
+
+      <div class="contacts-table__surface">
+        <div class="contacts-table__scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Teléfono</th>
+                <th scope="col">Tipo</th>
+                <th scope="col">Estatus</th>
+                <th scope="col">Inmueble</th>
+                <th scope="col">Agente</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (contact of filteredContacts; track contact.id) {
+                <tr>
+                  <td>{{ contact.name }}</td>
+                  <td>{{ contact.phone }}</td>
+                  <td>{{ contact.type }}</td>
+                  <td>{{ contact.status }}</td>
+                  <td>{{ contact.property }}</td>
+                  <td>{{ contact.agent }}</td>
+                  <td class="contacts-table__actions">
+                    <div class="row-actions">
+                      <a
+                        class="row-action row-action--view"
+                        [routerLink]="['/app/contactos', contact.id]"
+                        [attr.aria-label]="'Ver contacto ' + contact.id"
+                        title="Ver contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      </a>
+                      <a
+                        class="row-action row-action--edit"
+                        [routerLink]="['/app/contactos', contact.id, 'editar']"
+                        [attr.aria-label]="'Editar contacto ' + contact.id"
+                        title="Editar contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" />
+                        </svg>
+                      </a>
+                      <button
+                        class="row-action row-action--delete"
+                        type="button"
+                        (click)="contactPendingDelete = contact"
+                        [attr.aria-label]="'Borrar contacto ' + contact.id"
+                        title="Borrar contacto"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7">No hay contactos que coincidan con los filtros.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (contactPendingDelete; as contact) {
+    <div class="contact-dialog__backdrop">
+      <button
+        class="contact-dialog__backdrop-dismiss"
+        type="button"
+        aria-label="Cerrar diálogo de confirmación"
+        (click)="contactPendingDelete = null"
+      ></button>
+      <section
+        class="contact-dialog contact-dialog--confirm"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-contact-title"
+      >
+        <h2 id="delete-contact-title">¿Borrar este contacto?</h2>
+        <p>Se eliminará {{ contact.name }} {{ contact.surname }} ({{ contact.id }}).</p>
+        <div class="contact-dialog__actions">
+          <button
+            class="contacts__cancel-button"
+            type="button"
+            (click)="contactPendingDelete = null"
+          >
+            Cancelar
+          </button>
+          <button
+            class="row-action row-action--delete"
+            type="button"
+            (click)="confirmDeleteContact()"
+          >
+            Borrar
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

@@ -1,0 +1,80 @@
+<!-- eslint-disable @angular-eslint/template/prefer-control-flow -->
+<section class="page" aria-labelledby="appointments-title">
+  <!-- Header con botón de acción -->
+  <header class="page__header">
+    <div>
+      <h1 id="appointments-title">Citas</h1>
+    </div>
+    <button class="btn-primary" (click)="crearCita()">
+      <mat-icon>add</mat-icon>
+      Nueva Cita
+    </button>
+  </header>
+
+  <!-- Tarjeta de Resumen (Como en tu imagen) -->
+  <div class="summary-cards">
+    <article class="summary-card">
+      <div class="summary-icon">
+        <mat-icon>event_available</mat-icon>
+      </div>
+      <div class="summary-info">
+        <span class="label">Citas confirmadas</span>
+        <h3 class="value">20</h3>
+      </div>
+    </article>
+  </div>
+
+  <!-- Tabla de Citas -->
+  <article class="card table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>NOMBRE</th>
+            <th>TIPO</th>
+            <th>PRECIO</th>
+            <th>AGENTE</th>
+            <th class="text-center">ACCIÓN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cita of citas">
+            <td class="text-muted">{{ cita.id }}</td>
+            <td>
+              <strong>{{ cita.nombre }}</strong>
+            </td>
+            <td>{{ cita.tipo }}</td>
+            <td>{{ cita.precio }}</td>
+            <td>{{ cita.agente }}</td>
+            <td class="actions text-center">
+              <button class="icon-btn" (click)="editarCita(cita.id)" title="Editar" aria-label="Editar cita">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" /></svg>
+              </button>
+              <button class="icon-btn text-danger" (click)="eliminarCita(cita.id)" title="Eliminar" aria-label="Eliminar cita">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" /></svg>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="citas.length === 0">
+            <td colspan="6" class="empty-state">No se encontraron citas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination">
+      <span class="pagination-info">Mostrando 1 al 5 de 25</span>
+      <div class="pagination-controls">
+        <button class="page-btn" disabled>&lt; Anterior</button>
+        <button class="page-btn active">2</button>
+        <button class="page-btn">3</button>
+        <span class="dots">...</span>
+        <button class="page-btn">9</button>
+        <button class="page-btn">Siguiente &gt;</button>
+      </div>
+    </div>
+  </article>
+</section>

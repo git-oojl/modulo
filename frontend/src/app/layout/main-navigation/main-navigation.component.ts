@@ -15,13 +15,14 @@ export class MainNavigationComponent {
   private router = inject(Router);
 
   menuItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { label: 'Contactos', path: '/contactos', icon: 'people' },
-    { label: 'Propiedades', path: '/propiedades', icon: 'home_work' },
-    { label: 'Citas', path: '/citas', icon: 'calendar_today' },
-    { label: 'Cierres', path: '/cierres', icon: 'handshake' },
-    { label: 'Usuarios', path: '/usuarios', icon: 'manage_accounts' },
-    { label: 'Configuración', path: '/configuracion', icon: 'settings' },
+    { label: 'Dashboard', path: '/app/dashboard', icon: 'dashboard' },
+    { label: 'Contactos', path: '/app/contactos', icon: 'people' },
+    { label: 'Propiedades', path: '/app/propiedades', icon: 'home_work' },
+    { label: 'Citas', path: '/app/citas', icon: 'calendar_today' },
+    { label: 'Cierres', path: '/app/cierres', icon: 'handshake' },
+    { label: 'Asesores', path: '/app/asesores', icon: 'groups' },
+    { label: 'Usuarios', path: '/app/usuarios', icon: 'manage_accounts' },
+    { label: 'Configuración', path: '/app/configuracion', icon: 'settings' },
   ];
 
   logout() {

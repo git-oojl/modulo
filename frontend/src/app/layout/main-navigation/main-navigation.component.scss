@@ -19,8 +19,10 @@
   margin-bottom: 2rem;
   color: #fff;
   white-space: nowrap;
-  
-  .brand-short { display: none; }
+
+  .brand-short {
+    display: none;
+  }
 }
 
 .sidebar__nav {
@@ -87,7 +89,7 @@
   &:hover {
     background-color: var(--modulo-magenta-700, #790069);
   }
-  
+
   mat-icon {
     font-size: 1.2rem;
     width: 1.2rem;
@@ -104,12 +106,20 @@
 }
 
 .sidebar__avatar {
+  display: grid;
   width: 40px;
   height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
   border-radius: 50%;
   overflow: hidden;
-  flex-shrink: 0; /* Evita que se aplaste en modo encogido */
-  
+  flex-shrink: 0;
+  background: #a92f94;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+
   img {
     width: 100%;
     height: 100%;
@@ -123,15 +133,20 @@
   flex: 1;
   white-space: nowrap;
 
-  strong { font-size: 0.9rem; color: #fff; }
-  span { font-size: 0.75rem; color: #888; }
+  strong {
+    font-size: 0.9rem;
+    color: #fff;
+  }
+  span {
+    font-size: 0.75rem;
+    color: #888;
+  }
 }
 
 .sidebar__more-icon {
   color: #888;
   cursor: pointer;
 }
-
 
 /* =========================================
    MEDIA QUERIES (Modo encogido - Solo iconos)
@@ -143,7 +158,8 @@
   }
 
   /* Ocultar textos y logo largo */
-  .link-text, .brand-full {
+  .link-text,
+  .brand-full {
     display: none !important;
   }
 
@@ -175,8 +191,53 @@
     border-top: none;
     padding-top: 0;
   }
-  
-  .sidebar__user-info, .sidebar__more-icon {
+
+  .sidebar__user-info,
+  .sidebar__more-icon {
     display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    height: 100%;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0.5rem env(safe-area-inset-bottom);
+    scrollbar-width: none;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar__brand,
+  .sidebar__profile {
+    display: none;
+  }
+
+  .sidebar__nav {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .sidebar__link,
+  .sidebar__logout {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 0.625rem;
+  }
+
+  .sidebar__footer {
+    flex: 0 0 auto;
+    flex-direction: row;
+    margin: 0 0 0 auto;
   }
 }

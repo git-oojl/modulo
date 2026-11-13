@@ -1,0 +1,270 @@
+<section class="content-area" aria-labelledby="properties-title">
+  <div class="page-header">
+    <h1 id="properties-title">Propiedades</h1>
+    <!-- BOTÓN NUEVA PROPIEDAD -->
+    <button class="btn-primary" (click)="abrirModalCrear()">
+      <i class="fa-solid fa-plus"></i> Nueva Propiedad
+    </button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters-bar">
+    <label class="filter-field">
+      <span>Estado</span>
+      <select
+        class="filter-select"
+        aria-label="Estado"
+        [(ngModel)]="filtroEstado"
+        (change)="reiniciarPagina()"
+      >
+        @for (estado of estadosTabs; track estado.nombre) {
+          <option [value]="estado.nombre">{{ estado.nombre }} ({{ estado.cantidad }})</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>Sector</span>
+      <select class="filter-select" [(ngModel)]="filtroSector" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (sector of sectoresUnicos; track sector) {
+          <option [value]="sector">{{ sector }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>Operación</span>
+      <select class="filter-select" [(ngModel)]="filtroOperacion" (change)="reiniciarPagina()">
+        <option value="">Todas</option>
+        @for (op of operacionesUnicas; track op) {
+          <option [value]="op">{{ op }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>Tipo</span>
+      <select class="filter-select" [(ngModel)]="filtroTipo" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (tipo of tiposUnicos; track tipo) {
+          <option [value]="tipo">{{ tipo }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field">
+      <span>Agente</span>
+      <select class="filter-select" [(ngModel)]="filtroAgente" (change)="reiniciarPagina()">
+        <option value="">Todos</option>
+        @for (agente of agentesUnicos; track agente) {
+          <option [value]="agente">{{ agente }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="filter-field filter-field--search">
+      <span>Búsqueda</span>
+      <div class="search-local">
+        <i class="fa-solid fa-magnifying-glass" style="color: #999"></i>
+        <input
+          type="text"
+          placeholder="Clave, dirección o título..."
+          [(ngModel)]="filtroBusqueda"
+          (input)="reiniciarPagina()"
+        />
+      </div>
+    </label>
+  </div>
+
+  <div class="filters-footer">
+    <button class="btn-clear" type="button" (click)="limpiarFiltros()">
+      Limpiar
+    </button>
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>CLAVE</th>
+          <th>DIRECCIÓN</th>
+          <th>TIPO</th>
+          <th>PRECIO</th>
+          <th>AGENTE</th>
+          <th>ACCIÓN</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (prop of propiedadesPaginadas; track prop.clave) {
+          <tr>
+            <td>{{ prop.clave }}</td>
+            <td>
+              <div class="prop-title">{{ prop.titulo }}</div>
+              <div class="prop-sub">{{ prop.direccion }}</div>
+            </td>
+            <td>{{ prop.tipo }}</td>
+            <td>{{ prop.precio }}</td>
+            <td>{{ prop.agente }}</td>
+            <td class="actions">
+              <!-- BOTONES EDITAR Y ELIMINAR -->
+              <button
+                class="action-icon action-icon--edit"
+                type="button"
+                aria-label="Editar"
+                (click)="abrirModalEditar(prop)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" /></svg>
+              </button>
+              <button
+                class="action-icon action-icon--delete"
+                type="button"
+                aria-label="Eliminar"
+                (click)="eliminarPropiedad(prop.id)"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" /></svg>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 20px; color: #777">
+              No se encontraron propiedades con esos filtros.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div class="pagination">
+    <span
+      >Mostrando {{ inicioMostrar }} al {{ finMostrar }} de {{ propiedadesFiltradas.length }}</span
+    >
+
+    <div class="pages">
+      <button
+        class="page-btn"
+        [disabled]="paginaActual === 1"
+        (click)="irAPagina(paginaActual - 1)"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+
+      @for (pagina of [].constructor(totalPaginas); track $index) {
+        <button
+          class="page-btn"
+          [class.active]="paginaActual === $index + 1"
+          (click)="irAPagina($index + 1)"
+        >
+          {{ $index + 1 }}
+        </button>
+      }
+
+      <button
+        class="page-btn"
+        [disabled]="paginaActual === totalPaginas"
+        (click)="irAPagina(paginaActual + 1)"
+      >
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================== -->
+<!-- MODAL PARA AGREGAR / EDITAR PROPIEDADES    -->
+<!-- ========================================== -->
+@if (modalAbierto) {
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ esEdicion ? 'Editar Propiedad' : 'Nueva Propiedad' }}</h2>
+        <button class="btn-close" (click)="cerrarModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="property-key">Clave</label>
+            <input
+              id="property-key"
+              type="text"
+              [(ngModel)]="propiedadForm.clave"
+              placeholder="Ej. RCR692950"
+            />
+          </div>
+          <div class="form-group">
+            <label for="property-title">Título</label>
+            <input
+              id="property-title"
+              type="text"
+              [(ngModel)]="propiedadForm.titulo"
+              placeholder="Ej. Renta Casa"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="property-address">Dirección</label>
+          <input
+            id="property-address"
+            type="text"
+            [(ngModel)]="propiedadForm.direccion"
+            placeholder="Calle, Colonia, Ciudad"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="property-sector">Sector</label>
+            <input id="property-sector" type="text" [(ngModel)]="propiedadForm.sector" />
+          </div>
+          <div class="form-group">
+            <label for="property-operation">Operación</label>
+            <select id="property-operation" [(ngModel)]="propiedadForm.operacion">
+              <option value="Venta">Venta</option>
+              <option value="Renta">Renta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="property-type">Tipo</label>
+            <select id="property-type" [(ngModel)]="propiedadForm.tipo">
+              <option value="Residencial">Residencial</option>
+              <option value="Depto">Depto</option>
+              <option value="Terreno">Terreno</option>
+              <option value="Comercial">Comercial</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="property-price">Precio</label>
+            <input
+              id="property-price"
+              type="text"
+              [(ngModel)]="propiedadForm.precio"
+              placeholder="Ej. $1,500 USD"
+            />
+          </div>
+          <div class="form-group">
+            <label for="property-agent">Agente</label>
+            <select id="property-agent" [(ngModel)]="propiedadForm.agente">
+              @for (agente of agentesUnicos; track agente) {
+                <option [value]="agente">{{ agente }}</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarPropiedad()">Guardar</button>
+      </div>
+    </div>
+  </div>
+}

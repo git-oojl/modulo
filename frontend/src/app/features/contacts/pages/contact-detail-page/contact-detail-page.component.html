@@ -1,0 +1,126 @@
+<section class="contacts" aria-labelledby="contacts-title">
+  @if (contact; as contact) {
+    <div class="contacts__content contact-detail">
+      <nav class="contact-detail__breadcrumb" aria-label="Migas de pan">
+        <a routerLink="/app/contactos">Contactos</a>
+        <span aria-hidden="true">/</span>
+        <span>{{ contact.name }} {{ contact.surname }}</span>
+      </nav>
+
+      <header class="contact-detail__header">
+        <div class="contact-detail__identity">
+          <div class="contact-detail__avatar" aria-hidden="true">
+            {{ contactInitials(contact) }}
+          </div>
+          <div>
+            <h1 id="contacts-title">{{ contact.name }} {{ contact.surname }}</h1>
+            <p class="contact-detail__id">{{ contact.id }} · {{ contact.type }}</p>
+            <div class="contact-detail__tags">
+              <span>{{ contact.status }}</span>
+              <span>Agente: {{ contact.agent }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="contact-detail__actions">
+          <a [routerLink]="['/app/contactos', contact.id, 'editar']">Editar contacto</a>
+          <a routerLink="/app/citas/nueva">Agendar cita</a>
+        </div>
+      </header>
+
+      <div class="contact-detail__layout">
+        <aside class="contact-detail__sidebar">
+          <section class="detail-card">
+            <h2>Datos de contacto</h2>
+            <dl>
+              <div>
+                <dt>Teléfono</dt>
+                <dd>{{ contact.phone || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Correo electrónico</dt>
+                <dd>{{ contact.email || '—' }}</dd>
+              </div>
+              <div>
+                <dt>Presupuesto</dt>
+                <dd>${{ contact.minBudget || 'MIN' }} – ${{ contact.maxBudget || 'MÁX' }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="detail-card">
+            <h2>Interés inmobiliario</h2>
+            <dl>
+              <div>
+                <dt>Operación</dt>
+                <dd>{{ contact.operation }}</dd>
+              </div>
+              <div>
+                <dt>Tipo de inmueble</dt>
+                <dd>{{ contact.propertyType }}</dd>
+              </div>
+              <div>
+                <dt>Zona preferida</dt>
+                <dd>{{ contact.zone }}</dd>
+              </div>
+              <div>
+                <dt>Recámaras</dt>
+                <dd>{{ contact.bedrooms }}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="detail-card">
+            <h2>Registro</h2>
+            <dl>
+              <div>
+                <dt>ID del contacto</dt>
+                <dd>{{ contact.id }}</dd>
+              </div>
+              <div>
+                <dt>Fuente</dt>
+                <dd>{{ contact.source }}</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+
+        <div class="contact-detail__main">
+          <section class="detail-card detail-card--appointments">
+            <h2>Citas</h2>
+            <div class="detail-appointments">
+              @for (appointment of detailAppointments; track appointment.title) {
+                <article class="detail-appointment">
+                  <div>
+                    <h3>{{ appointment.title }}</h3>
+                    <p>{{ appointment.details }}</p>
+                  </div>
+                  <span class="detail-appointment__status">{{ appointment.status }}</span>
+                </article>
+              }
+            </div>
+          </section>
+
+          <section class="detail-card detail-card--activities">
+            <h2>Actividad reciente</h2>
+            <ol class="detail-activities">
+              @for (activity of detailActivities; track activity.title) {
+                <li>
+                  <span class="detail-activities__dot" aria-hidden="true"></span>
+                  <div>
+                    <h3>{{ activity.title }}</h3>
+                    <p>{{ activity.details }}</p>
+                  </div>
+                </li>
+              }
+            </ol>
+          </section>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="contacts__content contact-detail__not-found">
+      <h1 id="contacts-title">No se encontró este contacto</h1>
+      <a routerLink="/app/contactos">Volver a Contactos</a>
+    </div>
+  }
+</section>

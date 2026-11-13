@@ -13,13 +13,37 @@
 
 .main-content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   height: 100vh;
   transition: all 0.3s ease-in-out;
+  box-sizing: border-box;
 }
 
 @media (max-width: 992px) {
   .sidebar-container {
     width: 80px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-layout {
+    display: block;
+  }
+
+  .sidebar-container {
+    position: fixed;
+    z-index: 1000;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: calc(64px + env(safe-area-inset-bottom));
+  }
+
+  .main-content {
+    width: 100%;
+    height: 100dvh;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
 }

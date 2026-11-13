@@ -1,16 +1,18 @@
 <aside class="sidebar">
   <div class="sidebar__brand">
     <span class="brand-full">MODULO</span>
-    <span class="brand-short">M</span> <!-- Para cuando esté encogido -->
+    <span class="brand-short">M</span>
+    <!-- Para cuando esté encogido -->
   </div>
 
   <nav class="sidebar__nav" aria-label="Navegación principal">
     @for (item of menuItems; track item.path) {
-      <a 
-        [routerLink]="item.path" 
-        routerLinkActive="sidebar__link--active" 
+      <a
+        [routerLink]="item.path"
+        routerLinkActive="sidebar__link--active"
         [routerLinkActiveOptions]="{ exact: item.path === '/app/dashboard' }"
         class="sidebar__link"
+        [attr.aria-label]="item.label"
         [title]="item.label"
       >
         <mat-icon>{{ item.icon }}</mat-icon>
@@ -20,20 +22,24 @@
   </nav>
 
   <div class="sidebar__footer">
-    <button class="sidebar__logout" (click)="logout()" title="Cerrar sesión">
+    <button
+      class="sidebar__logout"
+      (click)="logout()"
+      aria-label="Cerrar sesión"
+      title="Cerrar sesión"
+    >
       <mat-icon>logout</mat-icon>
-      <span class="link-text">Logout</span>
+      <span class="link-text">Cerrar sesión</span>
     </button>
 
     <div class="sidebar__profile">
       <div class="sidebar__avatar">
-        <img src="https://i.pravatar.cc/150?img=47" alt="Avatar" />
+        <span aria-hidden="true">U</span>
       </div>
       <div class="sidebar__user-info link-text">
-        <strong>Ana Barajas</strong>
-        <span>Mirar perfil</span>
+        <strong>Usuario de ejemplo</strong>
+        <span>Perfil provisional</span>
       </div>
-      <mat-icon class="sidebar__more-icon link-text">more_vert</mat-icon>
     </div>
   </div>
 </aside>
