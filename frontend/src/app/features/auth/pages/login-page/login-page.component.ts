@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholderComponent } from '../../../../shared/ui/feature-placeholder/feature-placeholder.component';
-import { PagePlaceholder } from '../../../../core/models/page.model';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login-page',
-  imports: [FeaturePlaceholderComponent],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login-page.component.html',
   styleUrl: './login-page.component.scss',
 })
 export class LoginPageComponent {
-  readonly page: PagePlaceholder = {
-    eyebrow: 'Acceso de personal',
-    title: 'Iniciar sesión',
-    description: 'El acceso estará reservado para el personal autorizado de la inmobiliaria.',
-  };
+  showPassword = false;
+  loginMessage = '';
+
+  submitLogin(event: SubmitEvent): void {
+    event.preventDefault();
+    this.loginMessage = 'El servicio de acceso aún no está conectado.';
+  }
 }

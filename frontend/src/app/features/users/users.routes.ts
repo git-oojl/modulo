@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/auth/role.guard';
-import { UserListPageComponent } from './pages/user-list-page/user-list-page.component';
+import { AccessRequestListPageComponent } from './pages/access-request-list-page/access-request-list-page.component';
 
 export const usersRoutes: Routes = [
   {
     path: 'usuarios',
-    component: UserListPageComponent,
+    component: AccessRequestListPageComponent,
     canActivate: [roleGuard],
     runGuardsAndResolvers: 'always',
     data: { roles: ['administrador'] },

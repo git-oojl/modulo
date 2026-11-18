@@ -3,6 +3,9 @@ import { authGuard } from './core/auth/auth.guard';
 import { agentsRoutes } from './features/agents/agents.routes';
 import { appointmentsRoutes } from './features/appointments/appointments.routes';
 import { LoginPageComponent } from './features/auth/pages/login-page/login-page.component';
+import { AccessRequestPageComponent } from './features/auth/pages/access-request-page/access-request-page.component';
+import { PrivacyNoticePageComponent } from './features/auth/pages/privacy-notice-page/privacy-notice-page.component';
+import { RequestConfirmationPageComponent } from './features/auth/pages/request-confirmation-page/request-confirmation-page.component';
 import { catalogRoutes } from './features/catalog/catalog.routes';
 import { closingsRoutes } from './features/closings/closings.routes';
 import { contactsRoutes } from './features/contacts/contacts.routes';
@@ -22,6 +25,21 @@ import { AppShellComponent } from './layout/app-shell/app-shell.component';
  */
 export const routes: Routes = [
   { path: 'login', component: LoginPageComponent, title: 'Iniciar sesión | Modulo' },
+  {
+    path: 'solicitar-acceso',
+    component: AccessRequestPageComponent,
+    title: 'Solicitar acceso | Modulo',
+  },
+  {
+    path: 'aviso-de-privacidad',
+    component: PrivacyNoticePageComponent,
+    title: 'Aviso de privacidad | Modulo',
+  },
+  {
+    path: 'solicitud-enviada',
+    component: RequestConfirmationPageComponent,
+    title: 'Solicitud enviada | Modulo',
+  },
   {
     path: 'app',
     component: AppShellComponent,

@@ -218,7 +218,8 @@ export const devViews: DevView[] = [
     group: 'Administración',
     label: 'Usuarios',
     path: '/app/usuarios',
-    filePath: 'frontend/src/app/features/users/pages/user-list-page/user-list-page.component.ts',
+    filePath:
+      'frontend/src/app/features/users/pages/access-request-list-page/access-request-list-page.component.ts',
     roles: ['administrador'],
   },
   {
