@@ -1,0 +1,135 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: #f4f4f6;
+  color: #25232b;
+  font-family: Poppins, sans-serif;
+}
+.privacy-page {
+  width: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  padding: 0 4%;
+  background: #d9d7df;
+}
+.topbar a {
+  display: grid;
+  width: 20px;
+  height: 24px;
+  place-items: center;
+  color: #77747f;
+}
+.topbar svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+.privacy-layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 25% minmax(0, 1fr);
+  gap: 28px;
+  padding: 20px 5.5% 36px;
+}
+.contents {
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.contents h1 {
+  margin: 0 0 8px;
+  color: #b5afc0;
+  font-size: clamp(15px, 1.05vw, 20px);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+.contents p {
+  margin: 0 0 22px;
+  font-size: clamp(10px, 0.72vw, 13px);
+  line-height: 1.55;
+}
+.contents span {
+  margin: 0 0 5px;
+  font-size: clamp(9px, 0.62vw, 11px);
+  letter-spacing: 0.08em;
+}
+.contents a {
+  color: #b49abb;
+  font-size: clamp(9px, 0.62vw, 11px);
+  line-height: 1.55;
+  text-decoration: none;
+}
+.contents a:hover {
+  text-decoration: underline;
+}
+.privacy-copy {
+  width: min(100%, 1050px);
+  padding-top: 74px;
+  font-size: clamp(10px, 0.72vw, 13px);
+  line-height: 1.55;
+}
+.privacy-copy section {
+  margin: 0 0 18px;
+  scroll-margin-top: 16px;
+}
+.privacy-copy h2 {
+  margin: 0 0 4px;
+  color: #17151b;
+  font-size: clamp(11px, 0.78vw, 14px);
+  font-weight: 700;
+}
+.privacy-copy p {
+  margin: 0;
+}
+.privacy-copy ul {
+  margin: 0;
+  padding-left: 16px;
+}
+.consent-note {
+  margin: 22px 0 0 8px;
+  padding: 16px 20px;
+  border-radius: 4px;
+  background: #c5c0cc;
+}
+.consent-note h2 {
+  margin-bottom: 6px;
+}
+.privacy-footer {
+  min-height: 42px;
+  padding: 14px 4%;
+  background: #d9d7df;
+  font-size: 10px;
+  font-weight: 700;
+}
+@media (max-width: 480px) {
+  .privacy-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 24px 7% 30px;
+  }
+  .contents {
+    position: static;
+  }
+  .contents p {
+    max-width: 520px;
+  }
+  .contents a {
+    font-size: 10px;
+  }
+  .privacy-copy {
+    padding-top: 0;
+    font-size: 11px;
+  }
+  .privacy-copy h2 {
+    font-size: 12px;
+  }
+}

@@ -1,1 +1,164 @@
-<app-feature-placeholder [page]="page" />
+<div class="catalogue-page">
+  <header class="site-header">
+    <a class="brand" routerLink="/" aria-label="Modulo, inicio">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="m2 11 10-9 10 9v11h-7v-7H9v7H2z" /></svg>
+      </span>
+      <span>MODULO</span>
+    </a>
+    <a class="staff-link" routerLink="/login">Acceso de personal</a>
+  </header>
+
+  <section class="listings-section" aria-labelledby="listings-title">
+    @if (usesDemoData) {}
+
+    <div class="section-title-row">
+      <div>
+        <p class="breadcrumb">Catálogo <span>›</span> Propiedades</p>
+        <h1 id="listings-title">Propiedades publicadas</h1>
+        <p class="section-description">
+          Consulta los inmuebles disponibles y filtra los resultados.
+        </p>
+      </div>
+      @if (!isLoading() && !hasLoadError()) {
+        <p class="results-count">{{ filteredProperties().length }} propiedades</p>
+      }
+    </div>
+
+    <div class="filters-panel" role="search" aria-label="Buscar y filtrar propiedades">
+      <label class="search-field">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.8" cy="10.8" r="6.8" />
+          <path d="m16 16 5 5" />
+        </svg>
+        <input
+          type="search"
+          aria-label="Buscar por propiedad o zona"
+          placeholder="Busca por propiedad o zona"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="setSearchTerm($event)"
+        />
+      </label>
+
+      <div class="filter-group" aria-label="Tipo de operación">
+        <button
+          type="button"
+          [class.active]="operation() === 'todas'"
+          [attr.aria-pressed]="operation() === 'todas'"
+          (click)="setOperation('todas')"
+        >
+          Todas
+        </button>
+        <button
+          type="button"
+          [class.active]="operation() === 'venta'"
+          [attr.aria-pressed]="operation() === 'venta'"
+          (click)="setOperation('venta')"
+        >
+          Venta
+        </button>
+        <button
+          type="button"
+          [class.active]="operation() === 'renta'"
+          [attr.aria-pressed]="operation() === 'renta'"
+          (click)="setOperation('renta')"
+        >
+          Renta
+        </button>
+      </div>
+
+      <label class="select-field">
+        <span>Tipo</span>
+        <select
+          aria-label="Filtrar por tipo de inmueble"
+          [ngModel]="type()"
+          (ngModelChange)="setType($event)"
+        >
+          <option value="todos">Todos</option>
+          <option value="casa">Casa</option>
+          <option value="departamento">Departamento</option>
+          <option value="terreno">Terreno</option>
+        </select>
+      </label>
+      <button class="clear-filters" type="button" (click)="clearFilters()">Limpiar</button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="catalogue-message" role="status">Cargando propiedades…</div>
+    } @else if (hasLoadError()) {
+      <div class="catalogue-message error-message" role="alert">
+        <p>No pudimos cargar las propiedades en este momento.</p>
+        <button type="button" (click)="loadProperties()">Intentar de nuevo</button>
+      </div>
+    } @else if (filteredProperties().length) {
+      <div class="property-grid">
+        @for (property of filteredProperties(); track property.id) {
+          <article class="property-card">
+            <div class="property-image-wrap">
+              <img
+                class="property-image"
+                [src]="property.coverImageUrl"
+                [alt]="property.title"
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="operation-badge">{{ operationLabel(property.operation) }}</span>
+              <span class="favorite-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M20.8 8.7c0 5.1-8.8 10.2-8.8 10.2S3.2 13.8 3.2 8.7A4.7 4.7 0 0112 6.1a4.7 4.7 0 018.8 2.6z"
+                  />
+                </svg>
+              </span>
+            </div>
+            <div class="property-info">
+              <div class="property-kicker">
+                <span>{{ typeLabel(property.type) }}</span
+                ><span class="separator">·</span><span>{{ property.publicLocation }}</span>
+              </div>
+              <h3>{{ property.title }}</h3>
+              <p class="price">
+                {{ formatPrice(property.price) }}
+                <span>{{ property.operation === 'renta' ? 'MXN / mes' : 'MXN' }}</span>
+              </p>
+              <div class="property-features">
+                @if (property.bedrooms !== undefined) {
+                  <span
+                    ><svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 19v-8h18v8M3 15h18M6 11V7h5v4m2 0V7h5v4M3 19v2m18-2v2" /></svg
+                    >{{ property.bedrooms }} rec.</span
+                  >
+                }
+                @if (property.bathrooms !== undefined) {
+                  <span
+                    ><svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 12V6a3 3 0 016 0v2m-6 4h17l-2 6H6l-2-6zm2 6v2m13-2v2" /></svg
+                    >{{ property.bathrooms }} baños</span
+                  >
+                }
+                <span
+                  ><svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M4 4h16v16H4zM4 9h5v6H4m16-6h-5v6h5M9 4v5m6-5v5M9 20v-5m6 5v-5" /></svg
+                  >{{ property.areaM2 }} m²</span
+                >
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    } @else {
+      <div class="catalogue-message empty-message">
+        <span class="empty-icon" aria-hidden="true">⌕</span>
+        <h3>No encontramos propiedades</h3>
+        <p>Prueba con otra búsqueda o cambia los filtros para ver más opciones.</p>
+        <button type="button" (click)="clearFilters()">Ver todas las propiedades</button>
+      </div>
+    }
+  </section>
+
+  <footer class="site-footer">
+    <a class="footer-brand" routerLink="/">MODULO</a>
+    <span>© MODULO</span>
+    <a routerLink="/aviso-de-privacidad">Aviso de privacidad</a>
+  </footer>
+</div>

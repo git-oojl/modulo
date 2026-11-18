@@ -1,0 +1,31 @@
+<main class="confirmation-page">
+  <header class="brand-bar">
+    <a routerLink="/login" aria-label="Modulo, volver al inicio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m2 11 10-9 10 9v11h-7v-7H9v7H2z" /></svg>
+    </a>
+    <span>MODULO</span>
+  </header>
+
+  <section class="confirmation-card" aria-labelledby="confirmation-title">
+    <h1 id="confirmation-title">Solicitud Enviada</h1>
+    <p class="intro">
+      Recibimos tu solicitud. La administración la revisará y, si es aprobada, te enviaremos tus
+      datos de acceso a modulo&#64;gmail.com. La revisión suele tardar 3 días hábiles.
+    </p>
+
+    <ol class="steps">
+      <li class="complete">
+        <span class="step-icon" aria-hidden="true">✓</span><span>Solicitud Enviada</span>
+      </li>
+      <li>
+        <span class="step-icon" aria-hidden="true"></span><span>En revisión - Paso actual</span>
+      </li>
+      <li><span class="step-icon" aria-hidden="true"></span><span>Acceso por correo</span></li>
+    </ol>
+
+    <p class="temporary-access">
+      ¿Ya recibiste tus datos? <a routerLink="/login">Entra con tu contraseña temporal</a>
+    </p>
+    <a class="home-link" routerLink="/login">Volver al inicio</a>
+  </section>
+</main>

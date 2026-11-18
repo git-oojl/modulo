@@ -1,0 +1,88 @@
+<main class="requests-page">
+  <header class="page-header">
+    <div class="breadcrumb">Administración <span>›</span> Usuarios</div>
+    <h1>Solicitud de acceso</h1>
+    <p class="demo-note">Solicitudes de ejemplo. Los cambios no se guardan.</p>
+  </header>
+
+  <section class="requests-section" aria-labelledby="requests-heading">
+    <div class="section-heading">
+      <h2 id="requests-heading">Solicitudes</h2>
+      <div class="filters" aria-label="Filtrar solicitudes">
+        <button
+          type="button"
+          [class.active]="filter() === 'pendientes'"
+          [attr.aria-pressed]="filter() === 'pendientes'"
+          (click)="setFilter('pendientes')"
+        >
+          Pendientes <span class="filter-count">{{ pendingCount() }}</span>
+        </button>
+        <button
+          type="button"
+          [class.active]="filter() === 'todas'"
+          [attr.aria-pressed]="filter() === 'todas'"
+          (click)="setFilter('todas')"
+        >
+          Todas
+        </button>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Solicitante</th>
+            <th scope="col">Puesto</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (request of visibleRequests(); track request.id) {
+            <tr>
+              <td class="applicant-cell">
+                <strong>{{ request.name }}</strong>
+                <span>{{ request.email }}</span>
+              </td>
+              <td>{{ request.position }}</td>
+              <td>{{ request.date }}</td>
+              <td>
+                <span class="status" [class]="'status ' + request.status.toLowerCase()">{{
+                  request.status
+                }}</span>
+              </td>
+              <td>
+                @if (request.status === 'Pendiente') {
+                  <div class="row-actions">
+                    <button
+                      class="approve"
+                      type="button"
+                      (click)="updateStatus(request.id, 'Aprobada')"
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      class="reject"
+                      type="button"
+                      (click)="updateStatus(request.id, 'Rechazada')"
+                    >
+                      Rechazar
+                    </button>
+                  </div>
+                } @else {
+                  <span class="processed">Solicitud revisada</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="empty-state" colspan="5">No hay solicitudes pendientes.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>

@@ -1,0 +1,51 @@
+<main class="request-page">
+  <section class="request-brand" aria-label="Modulo inmobiliaria">
+    <div class="brand-copy">
+      <h1>Pide tu acceso<br />a la<br />plataforma.</h1>
+      <p>
+        Modulo es de uso interno. La administración revisa cada solicitud antes de crear una cuenta.
+      </p>
+    </div>
+  </section>
+
+  <section class="request-panel" aria-labelledby="request-title">
+    <div class="request-card">
+      <header>
+        <h2 id="request-title">Solicitar Acceso</h2>
+        <p class="intro">
+          Completa tus datos. Aún no tendrás acceso hasta que la administración apruebe tu
+          solicitud.
+        </p>
+      </header>
+
+      <form class="request-form" (submit)="submitRequest($event)">
+        <label for="full-name">Nombre Completo</label>
+        <input id="full-name" name="fullName" type="text" autocomplete="name" required />
+
+        <label for="email">Correo</label>
+        <input id="email" name="email" type="email" autocomplete="email" required />
+
+        <label for="phone">Teléfono</label>
+        <input id="phone" name="phone" type="tel" autocomplete="tel" required />
+
+        <label for="requested-role">Puesto que solicitas</label>
+        <select id="requested-role" name="requestedRole" required>
+          <option value="asesor">Asesor</option>
+          <option value="gerencia">Gerencia</option>
+          <option value="administracion">Administración</option>
+        </select>
+
+        <label for="comments">Comentarios (Opcionales)</label>
+        <textarea id="comments" name="comments" rows="3"></textarea>
+
+        <label class="consent" for="consent">
+          <input id="consent" name="consent" type="checkbox" required />
+          <span>Acepto que la empresa use mis datos para evaluar mi solicitud de acceso.</span>
+        </label>
+
+        <button class="submit-button" type="submit">Enviar Solicitud</button>
+      </form>
+      <a class="back-link" routerLink="/login">Volver a Iniciar Sesión</a>
+    </div>
+  </section>
+</main>
