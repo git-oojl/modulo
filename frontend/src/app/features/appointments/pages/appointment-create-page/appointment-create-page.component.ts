@@ -1,16 +1,22 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholderComponent } from '../../../../shared/ui/feature-placeholder/feature-placeholder.component';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+
 @Component({
   selector: 'app-appointment-create-page',
-  imports: [FeaturePlaceholderComponent],
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatIconModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './appointment-create-page.component.html',
   styleUrl: './appointment-create-page.component.scss',
 })
 export class AppointmentCreatePageComponent {
-  readonly page = {
-    eyebrow: 'Citas',
-    title: 'Nueva cita',
-    description: 'Programación con contacto, propiedad, propósito y responsable.',
-  };
+  guardarCita() {
+    console.log('Guardando nueva cita...');
+  }
+
+  cancelar() {
+    console.log('Cancelando...');
+  }
 }

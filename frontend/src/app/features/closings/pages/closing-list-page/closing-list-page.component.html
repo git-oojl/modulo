@@ -1,1 +1,236 @@
-<app-feature-placeholder [page]="page" />
+<!-- eslint-disable @angular-eslint/template/prefer-control-flow -->
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
+<!-- eslint-disable @angular-eslint/template/interactive-supports-focus -->
+<section class="page" aria-labelledby="closings-title">
+  <!-- Header con botón de acción (Gerencia / Administración) -->
+  <header class="page__header">
+    <div>
+      <h1 id="closings-title">Cierres y Comisiones</h1>
+    </div>
+    <button class="btn-primary" (click)="abrirModalNuevo()">
+      <mat-icon>add</mat-icon>
+      Registrar Cierre
+    </button>
+  </header>
+
+  <!-- Tarjeta de Resumen -->
+  <div class="summary-cards">
+    <article class="summary-card">
+      <div class="summary-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="summary-info">
+        <span class="label">Comisiones pendientes</span>
+        <h3 class="value">$15,500 MXN</h3>
+      </div>
+    </article>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="search-input">Búsqueda</label>
+        <div class="search-input-wrapper">
+          <mat-icon>search</mat-icon>
+          <input 
+            id="search-input"
+            type="text" 
+            [(ngModel)]="busqueda" 
+            placeholder="Propiedad, contacto o asesor..." 
+          />
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-operacion">Operación</label>
+        <select id="filter-operacion" class="filter-select">
+          <option value="todas">Todas</option>
+          <option value="venta">Venta</option>
+          <option value="renta">Renta</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-estatus">Estatus Cierre</label>
+        <select id="filter-estatus" class="filter-select">
+          <option value="todos">Todos</option>
+          <option value="vigente">Vigente</option>
+          <option value="anulado">Anulado</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-comision">Estado Comisión</label>
+        <select id="filter-comision" class="filter-select">
+          <option value="todos">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="reportada_pagada">Reportada / Pagada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-actions">
+      <button class="btn-clear" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
+  </div>
+
+  <!-- Tabla de Cierres -->
+  <article class="card table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>FECHA</th>
+            <th>PROPIEDAD / CONTACTO</th>
+            <th>ASESOR</th>
+            <th>TIPO</th>
+            <th>MONTO PACTADO</th>
+            <th>COMISIÓN ESTIMADA</th>
+            <th>ESTATUS</th>
+            <th>COMISIÓN</th>
+            <th class="text-center">ACCIÓN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cierre of cierres">
+            <td class="text-muted">{{ cierre.id }}</td>
+            <td><strong>{{ cierre.fecha }}</strong></td>
+            <td>
+              <div class="closing-details">
+                <span class="prop-title">{{ cierre.propiedad }}</span>
+                <span class="contact-name text-muted">{{ cierre.contacto }}</span>
+              </div>
+            </td>
+            <td>{{ cierre.asesor }}</td>
+            <td>
+              <span class="badge badge-op" [ngClass]="cierre.tipoOperacion === 'Venta' ? 'badge-venta' : 'badge-renta'">
+                {{ cierre.tipoOperacion }}
+              </span>
+            </td>
+            <td><strong>{{ cierre.monto }}</strong></td>
+            <td>{{ cierre.comision }}</td>
+            <td>
+              <span class="badge" [ngClass]="getStatusClass(cierre.status)">
+                {{ cierre.status }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="getComisionStatusClass(cierre.estadoComision)">
+                {{ cierre.estadoComision === 'reportada_pagada' ? 'Pagada' : 'Pendiente' }}
+              </span>
+            </td>
+            <td class="actions text-center">
+              <button class="icon-btn" (click)="abrirModalEditar(cierre)" title="Editar / Anular" aria-label="Editar cierre">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" /></svg>
+              </button>
+              <button class="icon-btn text-danger" (click)="eliminarCierre(cierre.id)" title="Eliminar" aria-label="Eliminar cierre">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m4 4v6m6-6v6" /></svg>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="cierres.length === 0">
+            <td colspan="10" class="empty-state">No se encontraron registros de cierres.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div class="pagination">
+      <span class="pagination-info">Mostrando 1 al 2 de 2</span>
+      <div class="pagination-controls">
+        <button class="page-btn" disabled>&lt; Anterior</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn" disabled>Siguiente &gt;</button>
+      </div>
+    </div>
+  </article>
+
+  <!-- MODAL FLOTANTE REUTILIZABLE (REGISTRAR / EDITAR CIERRE) -->
+  <div class="modal-backdrop" *ngIf="isModalOpen" (click)="cerrarModal()" role="button" tabindex="0">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isEditMode ? 'Editar o Corregir Cierre' : 'Registrar Nuevo Cierre' }}</h2>
+        <button class="close-btn" (click)="cerrarModal()" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="closing-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="propiedad">Inmueble / Propiedad <span class="required">*</span></label>
+              <select id="propiedad" class="form-control" [(ngModel)]="currentClosing.propiedad" name="propiedad">
+                <option value="" disabled>Seleccione la propiedad...</option>
+                <option value="Casa en Polanco">Casa en Polanco (Venta)</option>
+                <option value="Renta Depto Roma">Renta Depto Roma (Renta)</option>
+                <option value="Terreno Fracc. Norte">Terreno Fracc. Norte (Venta)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="contacto">Contacto vinculado <span class="required">*</span></label>
+              <select id="contacto" class="form-control" [(ngModel)]="currentClosing.contacto" name="contacto">
+                <option value="" disabled>Seleccione el cliente/comprador...</option>
+                <option value="Mya Flores Castañón">Mya Flores Castañón</option>
+                <option value="Jennifer Estrada Avendaño">Jennifer Estrada Avendaño</option>
+                <option value="Carlos Mendez">Carlos Mendez</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="asesor">Asesor responsable <span class="required">*</span></label>
+              <select id="asesor" class="form-control" [(ngModel)]="currentClosing.asesor" name="asesor">
+                <option value="" disabled>Seleccione al asesor...</option>
+                <option value="Karina Torres">Karina Torres</option>
+                <option value="Paola Suarez">Paola Suarez</option>
+                <option value="Wendy Guevara">Wendy Guevara</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="tipoOperacion">Tipo de Operación <span class="required">*</span></label>
+              <select id="tipoOperacion" class="form-control" [(ngModel)]="currentClosing.tipoOperacion" name="tipoOperacion">
+                <option value="Venta">Venta</option>
+                <option value="Renta">Renta</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="monto">Monto pactado <span class="required">*</span></label>
+              <input type="text" id="monto" class="form-control" [(ngModel)]="currentClosing.monto" name="monto" placeholder="Ej. $8,000,000 MXN" />
+            </div>
+
+            <div class="form-group">
+              <label for="comision">Comisión estimada (%) <span class="required">*</span></label>
+              <input type="text" id="comision" class="form-control" [(ngModel)]="currentClosing.comision" name="comision" placeholder="Ej. 5% ($400,000)" />
+            </div>
+
+            <div class="form-group">
+              <label for="status">Estatus del cierre</label>
+              <select id="status" class="form-control" [(ngModel)]="currentClosing.status" name="status">
+                <option value="vigente">Vigente (Retira inmueble del catálogo)</option>
+                <option value="anulado">Anulado</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="estadoComision">Estado de comisión</label>
+              <select id="estadoComision" class="form-control" [(ngModel)]="currentClosing.estadoComision" name="estadoComision">
+                <option value="pendiente">Pendiente</option>
+                <option value="reportada_pagada">Reportada / Pagada</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-primary-modal" (click)="guardarCierre()">{{ isEditMode ? 'Guardar Cambios' : 'Registrar Cierre' }}</button>
+      </div>
+    </div>
+  </div>
+</section>

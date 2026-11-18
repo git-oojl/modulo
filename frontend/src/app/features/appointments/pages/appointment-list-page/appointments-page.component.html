@@ -1,27 +1,69 @@
 <!-- eslint-disable @angular-eslint/template/prefer-control-flow -->
+<!-- eslint-disable @angular-eslint/template/click-events-have-key-events -->
+<!-- eslint-disable @angular-eslint/template/interactive-supports-focus -->
 <section class="page" aria-labelledby="appointments-title">
   <!-- Header con botón de acción -->
   <header class="page__header">
     <div>
       <h1 id="appointments-title">Citas</h1>
     </div>
-    <button class="btn-primary" (click)="crearCita()">
+    <button class="btn-primary" (click)="abrirModalNuevo()">
       <mat-icon>add</mat-icon>
       Nueva Cita
     </button>
   </header>
 
-  <!-- Tarjeta de Resumen (Como en tu imagen) -->
-  <div class="summary-cards">
-    <article class="summary-card">
-      <div class="summary-icon">
-        <mat-icon>event_available</mat-icon>
+  <!-- Barra de Filtros -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="search-input">Búsqueda</label>
+        <div class="search-input-wrapper">
+          <mat-icon>search</mat-icon>
+          <input 
+            id="search-input"
+            type="text" 
+            [(ngModel)]="busqueda" 
+            placeholder="Contacto, propiedad o asesor..." 
+          />
+        </div>
       </div>
-      <div class="summary-info">
-        <span class="label">Citas confirmadas</span>
-        <h3 class="value">20</h3>
+
+      <div class="filter-group">
+        <label for="filter-estado">Estatus</label>
+        <select id="filter-estado" class="filter-select">
+          <option value="todos">Todos</option>
+          <option value="programada">Programada</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
       </div>
-    </article>
+
+      <div class="filter-group">
+        <label for="filter-proposito">Propósito</label>
+        <select id="filter-proposito" class="filter-select">
+          <option value="todos">Todos</option>
+          <option value="visita">Visita</option>
+          <option value="captacion">Captación</option>
+          <option value="cierre">Cierre</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-agente">Agente</label>
+        <select id="filter-agente" class="filter-select">
+          <option value="todos">Todos</option>
+          <option value="karina">Karina Torres</option>
+          <option value="paola">Paola Suarez</option>
+          <option value="ana">Ana Barajas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-actions">
+      <button class="btn-clear" (click)="limpiarFiltros()">Limpiar</button>
+    </div>
   </div>
 
   <!-- Tabla de Citas -->
@@ -31,9 +73,10 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>NOMBRE</th>
-            <th>TIPO</th>
-            <th>PRECIO</th>
+            <th>FECHA / HORA</th>
+            <th>CONTACTO</th>
+            <th>PROPÓSITO</th>
+            <th>ESTATUS</th>
             <th>AGENTE</th>
             <th class="text-center">ACCIÓN</th>
           </tr>
@@ -41,14 +84,17 @@
         <tbody>
           <tr *ngFor="let cita of citas">
             <td class="text-muted">{{ cita.id }}</td>
+            <td><strong>{{ cita.fechaDisplay }}</strong></td>
+            <td>{{ cita.contacto }}</td>
+            <td>{{ cita.proposito }}</td>
             <td>
-              <strong>{{ cita.nombre }}</strong>
+              <span class="badge" [ngClass]="getCitaStatusClass(cita.status)">
+                {{ cita.status }}
+              </span>
             </td>
-            <td>{{ cita.tipo }}</td>
-            <td>{{ cita.precio }}</td>
             <td>{{ cita.agente }}</td>
             <td class="actions text-center">
-              <button class="icon-btn" (click)="editarCita(cita.id)" title="Editar" aria-label="Editar cita">
+              <button class="icon-btn" (click)="abrirModalEditar(cita)" title="Editar" aria-label="Editar cita">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5 5 5M4 20l4.3-.9L19 8.4a2.1 2.1 0 0 0-3-3L5.3 16.1 4 20Z" /></svg>
               </button>
               <button class="icon-btn text-danger" (click)="eliminarCita(cita.id)" title="Eliminar" aria-label="Eliminar cita">
@@ -58,7 +104,7 @@
           </tr>
 
           <tr *ngIf="citas.length === 0">
-            <td colspan="6" class="empty-state">No se encontraron citas.</td>
+            <td colspan="7" class="empty-state">No se encontraron citas.</td>
           </tr>
         </tbody>
       </table>
@@ -69,12 +115,90 @@
       <span class="pagination-info">Mostrando 1 al 5 de 25</span>
       <div class="pagination-controls">
         <button class="page-btn" disabled>&lt; Anterior</button>
-        <button class="page-btn active">2</button>
-        <button class="page-btn">3</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
         <span class="dots">...</span>
-        <button class="page-btn">9</button>
+        <button class="page-btn">5</button>
         <button class="page-btn">Siguiente &gt;</button>
       </div>
     </div>
   </article>
+
+  <!-- MODAL FLOTANTE REUTILIZABLE (NUEVA / EDITAR CITA) -->
+  <div class="modal-backdrop" *ngIf="isModalOpen" (click)="cerrarModal()" role="button" tabindex="0">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ isEditMode ? 'Editar Cita' : 'Nueva Cita' }}</h2>
+        <button class="close-btn" (click)="cerrarModal()" aria-label="Cerrar modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form class="appointment-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="contacto">Contacto <span class="required">*</span></label>
+              <select id="contacto" class="form-control" [(ngModel)]="currentCita.contacto" name="contacto">
+                <option value="" disabled>Seleccione un contacto...</option>
+                <option value="Mya Flores Castañón">Mya Flores Castañón</option>
+                <option value="Jennifer Estrada Avendaño">Jennifer Estrada Avendaño</option>
+                <option value="Carlos Mendez">Carlos Mendez</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="propiedad">Propiedad de interés</label>
+              <select id="propiedad" class="form-control" [(ngModel)]="currentCita.propiedad" name="propiedad">
+                <option value="">Sin propiedad vinculada</option>
+                <option value="RCR692950">Renta Casa - Retorno de la Laguna</option>
+                <option value="CBR598555">Venta Terreno - Francisco Sarabia</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="asesor">Asesor responsable <span class="required">*</span></label>
+              <select id="asesor" class="form-control" [(ngModel)]="currentCita.agente" name="agente">
+                <option value="" disabled>Seleccione un asesor...</option>
+                <option value="Karina Torres">Karina Torres</option>
+                <option value="Paola Suarez">Paola Suarez</option>
+                <option value="Wendy Guevara">Wendy Guevara</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="origen">Origen <span class="required">*</span></label>
+              <select id="origen" class="form-control" [(ngModel)]="currentCita.origen" name="origen">
+                <option value="guardia">Guardia</option>
+                <option value="sitio_web">Sitio web</option>
+                <option value="recomendacion">Recomendación</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="fecha">Fecha y hora <span class="required">*</span></label>
+              <input type="datetime-local" id="fecha" class="form-control" [(ngModel)]="currentCita.fecha" name="fecha" />
+            </div>
+
+            <div class="form-group">
+              <label for="proposito">Propósito <span class="required">*</span></label>
+              <select id="proposito" class="form-control" [(ngModel)]="currentCita.proposito" name="proposito">
+                <option value="Visita">Visita</option>
+                <option value="Captación">Captación</option>
+                <option value="Cierre">Cierre</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group full-width" style="margin-top: 1rem;">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" rows="2" class="form-control textarea" [(ngModel)]="currentCita.observaciones" name="observaciones" placeholder="Escriba notas adicionales..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button class="btn-primary-modal" (click)="guardarCita()">{{ isEditMode ? 'Guardar Cambios' : 'Guardar' }}</button>
+      </div>
+    </div>
+  </div>
 </section>

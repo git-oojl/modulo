@@ -1,1 +1,32 @@
-<app-feature-placeholder [page]="page" />
+<section class="page" aria-labelledby="create-appointment-title">
+  <header class="page__header">
+    <div>
+      <h1 id="create-appointment-title">Programar nueva cita</h1>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <button class="btn-secondary" (click)="cancelar()">Cancelar</button>
+      <button class="btn-primary" (click)="guardarCita()">
+        <mat-icon>save</mat-icon>
+        Guardar Cita
+      </button>
+    </div>
+  </header>
+
+  <article class="card" style="padding: 1.5rem; background: #fff; border-radius: 12px;">
+    <form class="form-grid">
+      <div class="form-group">
+        <label for="contacto">Contacto *</label>
+        <select id="contacto" class="form-control">
+          <option value="" disabled selected>Seleccione un contacto...</option>
+          <option value="1">Mya Flores Castañón</option>
+          <option value="2">Jennifer Estrada Avendaño</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="fecha">Fecha y hora *</label>
+        <input type="datetime-local" id="fecha" class="form-control" />
+      </div>
+    </form>
+  </article>
+</section>

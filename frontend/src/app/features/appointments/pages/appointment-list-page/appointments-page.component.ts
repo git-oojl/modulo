@@ -12,57 +12,122 @@ import { MatIconModule } from '@angular/material/icon';
 })
 export class AppointmentsPageComponent {
   busqueda = '';
+  isModalOpen = false;
+  isEditMode = false;
 
-  // Datos simulados (Mock) basados en tu imagen
+  // Objeto que almacena los datos de la cita en creación o edición
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  currentCita: any = {
+    id: '',
+    contacto: '',
+    propiedad: '',
+    agente: '',
+    origen: 'guardia',
+    fecha: '',
+    proposito: 'Visita',
+    observaciones: ''
+  };
+
   citas = [
     {
-      id: '01',
-      nombre: 'Mya Flores Castañón',
-      tipo: 'Residencial',
-      precio: '$1,500 USD',
+      id: 'CIT-01',
+      fecha: '2026-11-17T10:00',
+      fechaDisplay: '17 Nov 2026, 10:00',
+      contacto: 'Mya Flores Castañón',
+      propiedad: 'RCR692950',
+      proposito: 'Visita',
+      status: 'Confirmada',
       agente: 'Karina Torres',
+      origen: 'guardia',
+      observaciones: 'Cliente muy interesado en la zona.'
     },
     {
-      id: '02',
-      nombre: 'Jennifer Estrada Avendaño',
-      tipo: 'Terreno',
-      precio: '$500k MXN',
+      id: 'CIT-02',
+      fecha: '2026-11-18T12:30',
+      fechaDisplay: '18 Nov 2026, 12:30',
+      contacto: 'Jennifer Estrada Avendaño',
+      propiedad: 'CBR598555',
+      proposito: 'Captación',
+      status: 'Programada',
       agente: 'Paola Suarez',
+      origen: 'sitio_web',
+      observaciones: 'Revisar documentos del terreno.'
     },
     {
-      id: '03',
-      nombre: 'Renta Depto',
-      tipo: 'Departamento',
-      precio: '$2,200 MXN',
+      id: 'CIT-03',
+      fecha: '2026-11-19T16:00',
+      fechaDisplay: '19 Nov 2026, 16:00',
+      contacto: 'Carlos Mendez',
+      propiedad: '',
+      proposito: 'Cierre',
+      status: 'Completada',
       agente: 'Wendy Guevara',
-    },
-    // Agrego un par más para que se vea la tabla
-    {
-      id: '04',
-      nombre: 'Casa en Polanco',
-      tipo: 'Casa',
-      precio: '$8,000,000 MXN',
-      agente: 'Ana Barajas',
-    },
-    {
-      id: '05',
-      nombre: 'Oficina Roma Norte',
-      tipo: 'Comercial',
-      precio: '$25,000 MXN',
-      agente: 'Karina Torres',
+      origen: 'recomendacion',
+      observaciones: 'Firma de contratos.'
     },
   ];
 
-  // Métodos de acción (Para el futuro backend)
-  editarCita(id: string) {
-    console.log('Editando cita:', id);
+  limpiarFiltros() {
+    this.busqueda = '';
+  }
+
+  getCitaStatusClass(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'confirmada': return 'badge-success';
+      case 'programada': return 'badge-info';
+      case 'completada': return 'badge-completed';
+      default: return 'badge-default';
+    }
+  }
+
+  abrirModalNuevo() {
+    this.isEditMode = false;
+    this.currentCita = {
+      id: 'CIT-0' + (this.citas.length + 1),
+      contacto: '',
+      propiedad: '',
+      agente: '',
+      origen: 'guardia',
+      fecha: '',
+      proposito: 'Visita',
+      observaciones: ''
+    };
+    this.isModalOpen = true;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  abrirModalEditar(cita: any) {
+    this.isEditMode = true;
+    // Clonamos la cita seleccionada para no mutar la tabla en tiempo real antes de guardar
+    this.currentCita = { ...cita };
+    this.isModalOpen = true;
+  }
+
+  cerrarModal() {
+    this.isModalOpen = false;
+  }
+
+  guardarCita() {
+    if (this.isEditMode) {
+      // Actualizar cita existente
+      const index = this.citas.findIndex(c => c.id === this.currentCita.id);
+      if (index !== -1) {
+        this.currentCita.fechaDisplay = this.currentCita.fecha ? new Date(this.currentCita.fecha).toLocaleString() : this.currentCita.fechaDisplay;
+        this.citas[index] = { ...this.currentCita };
+      }
+      console.log('Cita actualizada:', this.currentCita);
+    } else {
+      // Crear nueva cita
+      this.currentCita.fechaDisplay = this.currentCita.fecha ? new Date(this.currentCita.fecha).toLocaleString() : 'Pendiente';
+      this.currentCita.status = 'Programada';
+      this.citas.push({ ...this.currentCita });
+      console.log('Nueva cita creada:', this.currentCita);
+    }
+    this.isModalOpen = false;
   }
 
   eliminarCita(id: string) {
+    this.citas = this.citas.filter(c => c.id !== id);
     console.log('Eliminando cita:', id);
-  }
-
-  crearCita() {
-    console.log('Crear nueva cita');
   }
 }
