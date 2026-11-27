@@ -1,14 +1,15 @@
 from django.contrib.auth import login, logout
 from django.middleware.csrf import get_token
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
 from core.permissions import IsAdmin
 
-from .models import User
-from .serializers import CurrentUserSerializer, LoginSerializer, UserAdminSerializer
+from .models import AccessRequest, User
+from .serializers import AccessRequestSerializer, CurrentUserSerializer, LoginSerializer, PublicAccessRequestSerializer, UserAdminSerializer
 
 
 @extend_schema(request=None, responses=None, tags=["Autenticación"])
@@ -39,6 +40,15 @@ def me(request):
     return Response(CurrentUserSerializer(request.user).data)
 
 
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def create_access_request(request):
+    serializer = PublicAccessRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    access_request = serializer.save()
+    return Response({"id": str(access_request.public_id)}, status=status.HTTP_201_CREATED)
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("username")
     serializer_class = UserAdminSerializer
@@ -54,3 +64,28 @@ class AdvisorViewSet(viewsets.ReadOnlyModelViewSet):
         from core.permissions import IsManager
 
         return [IsManager()]
+
+
+class AccessRequestViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = AccessRequest.objects.select_related("reviewed_by").all()
+    serializer_class = AccessRequestSerializer
+    permission_classes = (IsAdmin,)
+    lookup_field = "public_id"
+
+    @action(detail=True, methods=["post"])
+    def approve(self, request, public_id=None):
+        access_request = self.get_object()
+        access_request.status = AccessRequest.Status.APPROVED
+        access_request.reviewed_at = timezone.now()
+        access_request.reviewed_by = request.user
+        access_request.save(update_fields=("status", "reviewed_at", "reviewed_by", "updated_at"))
+        return Response(self.get_serializer(access_request).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, public_id=None):
+        access_request = self.get_object()
+        access_request.status = AccessRequest.Status.REJECTED
+        access_request.reviewed_at = timezone.now()
+        access_request.reviewed_by = request.user
+        access_request.save(update_fields=("status", "reviewed_at", "reviewed_by", "updated_at"))
+        return Response(self.get_serializer(access_request).data)

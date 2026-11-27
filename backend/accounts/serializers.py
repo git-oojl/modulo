@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 
-from .models import AdvisorProfile, User
+from .models import AccessRequest, AdvisorProfile, User
 
 
 class UserReferenceSerializer(serializers.ModelSerializer):
@@ -63,6 +63,29 @@ class UserAdminSerializer(serializers.ModelSerializer):
         if user.role == User.Role.ADVISOR:
             AdvisorProfile.objects.get_or_create(user=user)
         return user
+
+
+class PublicAccessRequestSerializer(serializers.ModelSerializer):
+    privacy_accepted = serializers.BooleanField()
+
+    class Meta:
+        model = AccessRequest
+        fields = ("name", "email", "phone", "requested_role", "comments", "privacy_accepted")
+
+    def validate_privacy_accepted(self, value):
+        if not value:
+            raise serializers.ValidationError("Debes aceptar el aviso de privacidad.")
+        return value
+
+
+class AccessRequestSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(source="public_id", read_only=True)
+    reviewed_by = UserReferenceSerializer(read_only=True)
+
+    class Meta:
+        model = AccessRequest
+        fields = ("id", "name", "email", "phone", "requested_role", "comments", "status", "reviewed_at", "reviewed_by", "created_at", "updated_at")
+        read_only_fields = fields
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
