@@ -24,8 +24,8 @@ class Command(BaseCommand):
         organization = Organization.objects.first()
         if organization is None:
             organization = Organization.objects.create(
-                name="Modulo Bienes Raíces · DEMO",
-                legal_name="Modulo Bienes Raíces, S.A. de C.V. · DEMO",
+                name="Modulo Bienes Raíces Baja California · DEMO",
+                legal_name="Modulo Bienes Raíces Baja California, S.A. de C.V. · DEMO",
                 timezone="America/Tijuana",
                 default_language="es-MX",
                 currency="MXN",
@@ -69,30 +69,42 @@ class Command(BaseCommand):
         return users
 
     def seed_properties(self, users):
+        legacy_titles = {
+            "terreno-santa-fe": ("DEMO · Terreno residencial en Santa Fe",),
+            "local-otay": ("DEMO · Local comercial en Otay",),
+            "depa-hipodromo": ("DEMO · Departamento para remodelar",),
+            "casa-cerrada": ("DEMO · Casa cerrada en La Mesa",),
+            "depa-cerrado": ("DEMO · Departamento cerrado en Centro",),
+        }
         definitions = (
             ("casa-centro", "DEMO · Casa contemporánea en Cacho", "casa", "venta", "activa", "4850000.00", "Tijuana", "Cacho", 3, 2, 2, "186", "220", "camila.ramos", True, "Terraza, cocina integral, estudio y seguridad 24/7."),
             ("depa-rio", "DEMO · Departamento con vista en Zona Río", "departamento", "venta", "activa", "3250000.00", "Tijuana", "Zona Río", 2, 2, 2, "112", None, "diego.mendoza", True, "Amenidades, balcón y dos cajones de estacionamiento."),
             ("loft-playas", "DEMO · Loft amueblado frente al mar", "departamento", "renta", "activa", "24500.00", "Tijuana", "Playas de Tijuana", 1, 1, 1, "68", None, "sofia.soto", True, "Renta mensual; incluye mantenimiento y mobiliario."),
-            ("terreno-santa-fe", "DEMO · Terreno residencial en Santa Fe", "terreno", "venta", "activa", "1180000.00", "Tijuana", "Santa Fe", None, None, None, None, "200", "mateo.ruiz", True, "Lote nivelado con servicios a pie de lote."),
+            ("terreno-santa-fe", "DEMO · Terreno residencial en San Marcos", "terreno", "venta", "activa", "1180000.00", "Mexicali", "San Marcos", None, None, None, None, "200", "mateo.ruiz", True, "Lote nivelado en Mexicali, con servicios a pie de lote."),
             ("oficina-rio", "DEMO · Oficina flexible en Zona Río", "oficina", "renta", "activa", "31000.00", "Tijuana", "Zona Río", None, 2, 3, "145", None, "camila.ramos", False, "Recepción, sala de juntas y estacionamiento para clientes."),
-            ("local-otay", "DEMO · Local comercial en Otay", "comercial", "renta", "activa", "42000.00", "Tijuana", "Otay", None, 1, 8, "190", None, "diego.mendoza", True, "Frente a avenida principal, ideal para showroom o restaurante."),
+            ("local-otay", "DEMO · Local comercial en Calzada Independencia", "comercial", "renta", "activa", "42000.00", "Mexicali", "Calzada Independencia", None, 1, 8, "190", None, "diego.mendoza", True, "Frente a avenida principal de Mexicali, ideal para showroom o restaurante."),
             ("casa-chapultepec", "DEMO · Casa familiar en Chapultepec", "casa", "venta", "reservada", "6900000.00", "Tijuana", "Chapultepec", 4, 3, 2, "260", "310", "sofia.soto", False, "Reservada mientras concluye validación documental."),
-            ("depa-hipodromo", "DEMO · Departamento para remodelar", "departamento", "venta", "borrador", "1950000.00", "Tijuana", "Hipódromo", 2, 1, 1, "84", None, "mateo.ruiz", False, "Captación reciente; pendiente de fotografías y documentación."),
+            ("depa-hipodromo", "DEMO · Departamento para remodelar en Cataviña", "departamento", "venta", "borrador", "1950000.00", "Mexicali", "Cataviña", 2, 1, 1, "84", None, "mateo.ruiz", False, "Captación reciente en Mexicali; pendiente de fotografías y documentación."),
             ("casa-lomas", "DEMO · Casa con jardín en Lomas de Agua Caliente", "casa", "venta", "activa", "8400000.00", "Tijuana", "Lomas de Agua Caliente", 4, 4, 3, "335", "510", "camila.ramos", True, "Jardín amplio, cuarto de servicio y acabados premium."),
             ("terreno-rosarito", "DEMO · Terreno de inversión en Rosarito", "terreno", "venta", "archivada", "780000.00", "Playas de Rosarito", "Primo Tapia", None, None, None, None, "300", "diego.mendoza", False, "Inventario archivado por solicitud del propietario."),
-            ("casa-cerrada", "DEMO · Casa cerrada en La Mesa", "casa", "venta", "activa", "2780000.00", "Tijuana", "La Mesa", 3, 2, 2, "152", "180", "sofia.soto", False, "Operación de venta concretada en el historial demo."),
-            ("depa-cerrado", "DEMO · Departamento cerrado en Centro", "departamento", "renta", "activa", "18000.00", "Tijuana", "Centro", 2, 1, 1, "76", None, "mateo.ruiz", False, "Renta anterior anulada: la publicación no se reactiva automáticamente."),
+            ("casa-cerrada", "DEMO · Casa cerrada en Villafontana", "casa", "venta", "activa", "2780000.00", "Mexicali", "Villafontana", 3, 2, 2, "152", "180", "sofia.soto", False, "Operación de venta en Mexicali concretada en el historial demo."),
+            ("depa-cerrado", "DEMO · Departamento cerrado en Centro Cívico", "departamento", "renta", "activa", "18000.00", "Mexicali", "Centro Cívico", 2, 1, 1, "76", None, "mateo.ruiz", False, "Renta anterior en Mexicali anulada: la publicación no se reactiva automáticamente."),
         )
         properties = {}
         for key, title, type, operation, status, price, city, neighborhood, bedrooms, bathrooms, parking, area, land_area, advisor, is_public, description in definitions:
-            property, _ = Property.objects.update_or_create(
-                title=title,
-                defaults={
+            defaults = {
                     "description": description, "type": type, "operation": operation, "status": status, "price": Decimal(price), "currency": "MXN", "country": "México", "state": "Baja California", "city": city, "neighborhood": neighborhood,
                     "address": f"Dirección privada de {neighborhood}, {city}", "public_location": f"{neighborhood}, {city}", "bedrooms": bedrooms, "bathrooms": bathrooms, "parking_spaces": parking, "area_m2": Decimal(area) if area else None, "land_area_m2": Decimal(land_area) if land_area else None,
                     "features": ["Datos sintéticos", "Demo", "Visita con cita previa"], "advisor": users[advisor], "is_public": is_public,
-                },
-            )
+            }
+            property = Property.objects.filter(title__in=(title, *legacy_titles.get(key, ()))).first()
+            if property:
+                for field, value in defaults.items():
+                    setattr(property, field, value)
+                property.title = title
+                property.save()
+            else:
+                property = Property.objects.create(title=title, **defaults)
             self.ensure_cover(property, key)
             properties[key] = property
         return properties
@@ -114,8 +126,8 @@ class Command(BaseCommand):
             ("daniel-rocha", "Daniel Rocha", "+52 664 555 1004", "daniel.rocha@example.test", "cliente_cerrado", "sofia.soto", "contacto_personal", "Compra concluida de casa familiar."),
             ("elena-prado", "Elena Prado", "+52 664 555 1005", "elena.prado@example.test", "perdido", "mateo.ruiz", "portales", "Eligió un inmueble fuera del inventario."),
             ("fernando-gil", "Fernando Gil", "+52 664 555 1006", "fernando.gil@example.test", "inactivo", "camila.ramos", "guardia", "Sin respuesta tras varios intentos documentados."),
-            ("gabriela-ruiz", "Gabriela Ruiz", "+52 664 555 1007", "gabriela.ruiz@example.test", "prospecto", "diego.mendoza", "sitio_web", "Solicitó ficha del local comercial en Otay."),
-            ("hector-solis", "Héctor Solís", "+52 664 555 1008", "hector.solis@example.test", "cliente_activo", "mateo.ruiz", "recomendacion", "Quiere invertir en tierra cerca de Rosarito."),
+            ("gabriela-ruiz", "Gabriela Ruiz", "+52 664 555 1007", "gabriela.ruiz@example.test", "prospecto", "diego.mendoza", "sitio_web", "Solicitó ficha del local comercial en Mexicali."),
+            ("hector-solis", "Héctor Solís", "+52 664 555 1008", "hector.solis@example.test", "cliente_activo", "mateo.ruiz", "recomendacion", "Quiere invertir en tierra al oriente de Mexicali."),
             ("ines-bernal", "Inés Bernal", "+52 664 555 1009", "ines.bernal@example.test", "prospecto", "sofia.soto", "redes_sociales", "Agendó una visita para casa reservada."),
             ("jorge-luna", "Jorge Luna", "+52 664 555 1010", "jorge.luna@example.test", "cliente_cerrado", "mateo.ruiz", "contacto_personal", "Renta cerrada posteriormente anulada por documentación."),
             ("karla-ortiz", "Karla Ortiz", "+52 664 555 1011", "karla.ortiz@example.test", "prospecto", None, "sitio_web", "Consulta entrante sin asignar; debe aparecer para gestión."),
@@ -129,7 +141,7 @@ class Command(BaseCommand):
 
     def seed_relationships(self, contacts, properties, users, reference_day):
         for contact_key, property_key, note in (
-            ("andrea-vega", "casa-centro", "Comparando opciones de 3 recámaras."), ("andrea-vega", "depa-rio", "Desea conocer amenidades y cuota de mantenimiento."), ("bruno-castro", "oficina-rio", "Requiere espacio para 12 personas."), ("carla-lopez", "loft-playas", "Pregunta si aceptan mascota pequeña."), ("gabriela-ruiz", "local-otay", "Necesita validar uso de suelo."), ("hector-solis", "terreno-santa-fe", "Solicita proyección de plusvalía."), ("ines-bernal", "casa-chapultepec", "Segunda visita con su familia."), ("karla-ortiz", "casa-centro", "Consulta pública inicial."),
+            ("andrea-vega", "casa-centro", "Comparando opciones de 3 recámaras."), ("andrea-vega", "depa-rio", "Desea conocer amenidades y cuota de mantenimiento."), ("bruno-castro", "oficina-rio", "Requiere espacio para 12 personas."), ("carla-lopez", "loft-playas", "Pregunta si aceptan mascota pequeña."), ("gabriela-ruiz", "local-otay", "Necesita validar uso de suelo en Mexicali."), ("hector-solis", "terreno-santa-fe", "Solicita proyección de plusvalía en Mexicali."), ("ines-bernal", "casa-chapultepec", "Segunda visita con su familia."), ("karla-ortiz", "casa-centro", "Consulta pública inicial."),
         ):
             PropertyInterest.objects.update_or_create(contact=contacts[contact_key], property=properties[property_key], defaults={"note": note})
         for contact_key, activity_type, content, offset, user_key in (
@@ -147,7 +159,7 @@ class Command(BaseCommand):
 
     def seed_appointments(self, contacts, properties, users, sources, reference_day):
         definitions = (
-            ("andrea-vega", "casa-centro", "camila.ramos", "sitio_web", "visita", "confirmada", 1, 11, "Visita confirmada; llegará con su pareja.", ""), ("bruno-castro", "oficina-rio", "diego.mendoza", "recomendacion", "visita", "programada", 3, 16, "Visita con socio y responsable administrativo.", ""), ("carla-lopez", "loft-playas", "sofia.soto", "redes_sociales", "visita", "completada", -3, 12, "Le gustó el inmueble; enviará documentación para renta.", "Resultado registrado en historial."), ("leonardo-paz", None, "camila.ramos", "otro", "captacion", "programada", 2, 10, "Visita de captación para evaluar vivienda.", ""), ("gabriela-ruiz", "local-otay", "diego.mendoza", "sitio_web", "visita", "no_asistio", -2, 17, "No asistió; pidió reagendar por mensaje.", ""), ("ines-bernal", "casa-chapultepec", "sofia.soto", "redes_sociales", "visita", "cancelada", -1, 14, "Cancelada por conflicto de horario.", ""), ("hector-solis", "terreno-santa-fe", "mateo.ruiz", "recomendacion", "visita", "programada", 5, 9, "Recorrido de lote y explicación de servicios.", ""),
+            ("andrea-vega", "casa-centro", "camila.ramos", "sitio_web", "visita", "confirmada", 1, 11, "Visita confirmada; llegará con su pareja.", ""), ("bruno-castro", "oficina-rio", "diego.mendoza", "recomendacion", "visita", "programada", 3, 16, "Visita con socio y responsable administrativo.", ""), ("carla-lopez", "loft-playas", "sofia.soto", "redes_sociales", "visita", "completada", -3, 12, "Le gustó el inmueble; enviará documentación para renta.", "Resultado registrado en historial."), ("leonardo-paz", None, "camila.ramos", "otro", "captacion", "programada", 2, 10, "Visita de captación para evaluar vivienda.", ""), ("gabriela-ruiz", "local-otay", "diego.mendoza", "sitio_web", "visita", "no_asistio", -2, 17, "No asistió; pidió reagendar su visita a Mexicali.", ""), ("ines-bernal", "casa-chapultepec", "sofia.soto", "redes_sociales", "visita", "cancelada", -1, 14, "Cancelada por conflicto de horario.", ""), ("hector-solis", "terreno-santa-fe", "mateo.ruiz", "recomendacion", "visita", "programada", 5, 9, "Recorrido de lote y explicación de servicios en Mexicali.", ""),
         )
         for contact_key, property_key, advisor_key, source_key, purpose, status, offset, hour, notes, result in definitions:
             appointment, created = Appointment.objects.get_or_create(contact=contacts[contact_key], notes=notes, defaults={"property": properties[property_key] if property_key else None, "advisor": users[advisor_key], "source": sources[source_key], "purpose": purpose, "status": "programada" if status == "completada" else status, "starts_at": self.moment(reference_day, offset, hour), "ends_at": self.moment(reference_day, offset, hour + 1), "created_by": users["gerencia.demo"]})

@@ -8,7 +8,7 @@ La API vive en `/api/v1/`; su contrato y reglas de acceso están resumidos en [`
 uv run --frozen --env-file .env python manage.py seed_demo
 ```
 
-En una base nueva, esto habilita el catálogo y genera un entorno sintético e idempotente: seis cuentas, doce propiedades (borrador, activas, reservada, archivada y cerradas), doce contactos, intereses, actividades, seguimientos, citas, una venta vigente, una renta anulada y cubiertas SVG locales de demostración. No elimina ni modifica registros que no pertenezcan a este conjunto demo.
+En una base nueva, esto habilita el catálogo y genera un entorno sintético e idempotente, centrado en Tijuana, Mexicali y la costa de Baja California: seis cuentas, doce propiedades (borrador, activas, reservada, archivada y cerradas), doce contactos, intereses, actividades, seguimientos, citas, una venta vigente, una renta anulada y cubiertas SVG locales de demostración. No elimina ni modifica registros que no pertenezcan a este conjunto demo.
 
 | Rol | Usuario |
 | --- | --- |

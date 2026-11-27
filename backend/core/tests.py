@@ -29,6 +29,9 @@ class DemoSeedTests(TestCase):
         self.assertEqual(Closing.objects.count(), 2)
         self.assertEqual(Closing.objects.filter(status=Closing.Status.CURRENT).count(), 1)
         self.assertEqual(Property.objects.filter(status=Property.Status.CLOSED).count(), 2)
+        self.assertEqual(Property.objects.filter(city="Tijuana").count(), 6)
+        self.assertEqual(Property.objects.filter(city="Mexicali").count(), 5)
+        self.assertEqual(Property.objects.filter(city="Playas de Rosarito").count(), 1)
 
 
 class DashboardScopeTests(TestCase):
