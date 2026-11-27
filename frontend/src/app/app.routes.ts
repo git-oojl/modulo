@@ -1,5 +1,7 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Routes, Router } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
+import { AuthService } from './core/auth/auth.service';
 import { agentsRoutes } from './features/agents/agents.routes';
 import { appointmentsRoutes } from './features/appointments/appointments.routes';
 import { LoginPageComponent } from './features/auth/pages/login-page/login-page.component';
@@ -17,6 +19,11 @@ import { NotFoundPageComponent } from './features/system/pages/not-found-page/no
 import { OfflinePageComponent } from './features/system/pages/offline-page/offline-page.component';
 import { usersRoutes } from './features/users/users.routes';
 import { AppShellComponent } from './layout/app-shell/app-shell.component';
+
+const rootRedirect = () => {
+  const auth = inject(AuthService);
+  return inject(Router).createUrlTree([auth.isAuthenticated() ? '/app/dashboard' : '/login']);
+};
 
 /**
  * Internal routes live below /app and are protected at the shell boundary.
@@ -63,6 +70,7 @@ export const routes: Routes = [
   { path: 'contactos', pathMatch: 'full', redirectTo: 'app/contactos' },
   { path: 'propiedades', pathMatch: 'full', redirectTo: 'app/propiedades' },
   { path: 'citas', pathMatch: 'full', redirectTo: 'app/citas' },
+  { path: '', pathMatch: 'full', canMatch: [rootRedirect], redirectTo: 'login' },
   ...catalogRoutes,
   { path: '**', component: NotFoundPageComponent, title: 'No encontrada | Modulo' },
 ];
