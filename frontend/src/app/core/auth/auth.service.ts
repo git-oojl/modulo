@@ -1,4 +1,6 @@
-import { Injectable, computed, isDevMode, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, isDevMode, signal } from '@angular/core';
+import { catchError, map, Observable, of, switchMap, tap } from 'rxjs';
 import { AuthenticatedUser } from './auth.models';
 import {
   DevelopmentMode,
@@ -16,6 +18,7 @@ export type { DevelopmentMode, PreviewViewer } from './development-preview.stora
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+  private readonly http = inject(HttpClient);
   private readonly savedPreviewState = readDevelopmentPreviewState();
   private readonly realUserState = signal<AuthenticatedUser | null>(null);
   private readonly previewViewerState = signal<PreviewViewer>(this.savedPreviewState.viewer);
@@ -78,6 +81,35 @@ export class AuthService {
   clearLocalSession(): void {
     this.realUserState.set(null);
     this.leavePreview();
+  }
+
+  login(username: string, password: string): Observable<AuthenticatedUser> {
+    return this.http.get('/api/v1/auth/csrf/').pipe(
+      switchMap(() =>
+        this.http.post<AuthenticatedUser>('/api/v1/auth/login/', { username, password }),
+      ),
+      tap((user) => this.setRealUser(user)),
+    );
+  }
+
+  logout(): Observable<void> {
+    return this.http
+      .post<void>('/api/v1/auth/logout/', {})
+      .pipe(tap(() => this.clearLocalSession()));
+  }
+
+  restoreSession(): Observable<void> {
+    if (this.isPreviewMode()) {
+      return of(void 0);
+    }
+    return this.http.get<AuthenticatedUser>('/api/v1/auth/me/').pipe(
+      tap((user) => this.setRealUser(user)),
+      map(() => void 0),
+      catchError(() => {
+        this.realUserState.set(null);
+        return of(void 0);
+      }),
+    );
   }
 
   private savePreviewState(): void {
