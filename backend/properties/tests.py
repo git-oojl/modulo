@@ -23,3 +23,14 @@ class PublicCatalogueTests(TestCase):
         self.assertEqual(data["public_location"], "Centro, Tijuana")
         self.assertNotIn("address", data)
         self.assertNotIn("advisor", data)
+
+    def test_consulta_publica_crea_contacto_sin_asesor(self):
+        response = APIClient().post("/api/v1/public/inquiries/", {"property": str(self.property.id), "name": "Interesada", "phone": "5550000001", "email": "interesada@example.test", "message": "Quiero conocerla.", "privacy_accepted": True}, format="json")
+
+        self.assertEqual(response.status_code, 201)
+        from contacts.models import Contact, PropertyInterest
+
+        contact = Contact.objects.get(id=response.json()["id"])
+        self.assertIsNone(contact.advisor)
+        self.assertEqual(contact.source.name, "sitio_web")
+        self.assertTrue(PropertyInterest.objects.filter(contact=contact, property=self.property).exists())
