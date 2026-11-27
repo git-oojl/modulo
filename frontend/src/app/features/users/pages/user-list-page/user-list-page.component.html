@@ -1,23 +1,37 @@
-<main class="requests-page">
-  <header class="page-header">
-    <div class="breadcrumb">Administración <span>›</span> Usuarios</div>
-    <h1>Usuarios</h1>
-    <p>Altas, activación y roles de acceso.</p>
-    <a routerLink="/app/usuarios/solicitudes">Ver solicitudes de acceso</a>
+<main class="admin-page" aria-labelledby="users-title">
+  <header class="admin-page__header">
+    <div>
+      <p class="admin-page__eyebrow">Administración <span>›</span> Accesos</p>
+      <h1 id="users-title">Usuarios</h1>
+      <p>Altas, activación y roles de acceso para el equipo.</p>
+    </div>
+    <div class="admin-page__actions">
+      <a class="button button--secondary" routerLink="/app/usuarios/solicitudes">Solicitudes de acceso</a>
+      <button class="button" type="button" (click)="creating.set(!creating())">{{ creating() ? 'Cancelar' : 'Nuevo usuario' }}</button>
+    </div>
   </header>
-  @if (error()) { <p role="alert">{{ error() }}</p> }
-  <button type="button" (click)="creating.set(!creating())">{{ creating() ? 'Cancelar' : 'Nuevo usuario' }}</button>
+
+  @if (error()) { <p class="alert" role="alert">{{ error() }}</p> }
+
   @if (creating()) {
-    <form (ngSubmit)="save()">
-      <input name="username" required placeholder="Usuario" [(ngModel)]="form.username" />
-      <input name="firstName" placeholder="Nombre" [(ngModel)]="form.first_name" />
-      <input name="lastName" placeholder="Apellido" [(ngModel)]="form.last_name" />
-      <input name="email" required type="email" placeholder="Correo" [(ngModel)]="form.email" />
-      <select name="role" [(ngModel)]="form.role"><option value="asesor">Asesor</option><option value="gerencia">Gerencia</option><option value="administrador">Administración</option></select>
-      <input name="password" required minlength="12" type="password" placeholder="Contraseña temporal (12+)" [(ngModel)]="form.password" />
-      <button type="submit">Crear usuario</button>
-    </form>
+    <section class="panel" aria-labelledby="new-user-title">
+      <div class="panel__heading"><h2 id="new-user-title">Crear usuario</h2><p>La contraseña temporal debe tener al menos 12 caracteres.</p></div>
+      <form class="form-grid" (ngSubmit)="save()">
+        <label><span>Usuario</span><input name="username" required autocomplete="username" [(ngModel)]="form.username" /></label>
+        <label><span>Nombre</span><input name="firstName" autocomplete="given-name" [(ngModel)]="form.first_name" /></label>
+        <label><span>Apellidos</span><input name="lastName" autocomplete="family-name" [(ngModel)]="form.last_name" /></label>
+        <label><span>Correo</span><input name="email" required type="email" autocomplete="email" [(ngModel)]="form.email" /></label>
+        <label><span>Rol</span><select name="role" [(ngModel)]="form.role"><option value="asesor">Asesor</option><option value="gerencia">Gerencia</option><option value="administrador">Administración</option></select></label>
+        <label><span>Contraseña temporal</span><input name="password" required minlength="12" type="password" autocomplete="new-password" [(ngModel)]="form.password" /></label>
+        <div class="form-grid__footer"><button class="button" type="submit">Crear usuario</button></div>
+      </form>
+    </section>
   }
-  <div class="table-scroll"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
-  <tbody>@for (user of users(); track user.id) { <tr><td>{{ user.username }}<br /><small>{{ user.email }}</small></td><td>{{ user.display_name }}</td><td>{{ user.role }}</td><td>{{ user.is_active ? 'Activo' : 'Inactivo' }}</td><td><button type="button" (click)="toggle(user)">{{ user.is_active ? 'Desactivar' : 'Activar' }}</button></td></tr> } @empty { <tr><td colspan="5">No hay usuarios.</td></tr> }</tbody></table></div>
+
+  <section class="panel panel--table" aria-labelledby="directory-title">
+    <div class="panel__heading"><h2 id="directory-title">Directorio</h2><p>{{ users().length }} usuario(s) registrado(s)</p></div>
+    <div class="table-scroll"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th><span class="visually-hidden">Acción</span></th></tr></thead>
+      <tbody>@for (user of users(); track user.id) { <tr><td><strong>{{ user.username }}</strong><small>{{ user.email }}</small></td><td>{{ user.display_name }}</td><td><span class="role">{{ user.role }}</span></td><td><span class="status" [class.status--inactive]="!user.is_active">{{ user.is_active ? 'Activo' : 'Inactivo' }}</span></td><td class="table-action"><button class="text-button" type="button" (click)="toggle(user)">{{ user.is_active ? 'Desactivar' : 'Activar' }}</button></td></tr> } @empty { <tr><td class="empty" colspan="5">No hay usuarios registrados.</td></tr> }</tbody>
+    </table></div>
+  </section>
 </main>
