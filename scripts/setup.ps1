@@ -308,16 +308,18 @@ function Get-PreparationChoice {
         Write-Host '  [3] Comprobar dependencias instaladas'
         Write-Host '  [4] Iniciar solo Docker y PostgreSQL'
         Write-Host '  [5] Aplicar solo migraciones Django'
+        Write-Host '  [6] Migrar y cargar datos demo sinteticos'
         Write-Host '  [0] Salir sin modificar el equipo'
-        $choice = (Read-Host 'Elige 1, 2, 3, 4, 5 o 0').Trim()
+        $choice = (Read-Host 'Elige 1, 2, 3, 4, 5, 6 o 0').Trim()
         switch ($choice) {
             '1' { return 'Prepare' }
             '2' { return 'Install' }
             '3' { return 'Check' }
             '4' { return 'Docker' }
             '5' { return 'Migrate' }
+            '6' { return 'SeedDemo' }
             '0' { return 'Stop' }
-            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4, 5 o 0.' }
+            default { Write-Warning 'Respuesta no valida. Escribe 1, 2, 3, 4, 5, 6 o 0.' }
         }
     }
 }
@@ -391,6 +393,24 @@ function Invoke-ModuloMigrations {
         Pop-Location
     }
     Write-Host '[OK] Migraciones Django aplicadas.'
+}
+
+function Invoke-ModuloDemoSeed {
+    Require-Command 'uv' 'Instala uv o prepara el backend con la opcion [1].'
+    $envFile = Join-Path $backendPath '.env'
+    if (-not (Test-Path $envFile)) {
+        throw 'Falta backend/.env. Elige [1] para crear y preparar el entorno backend antes de cargar datos demo.'
+    }
+
+    Push-Location $backendPath
+    try {
+        Write-Host '[Datos demo] Cargando datos sinteticos de Baja California...'
+        uv run --frozen --no-sync --env-file .env python manage.py seed_demo
+        if ($LASTEXITCODE -ne 0) { throw 'No se pudieron cargar los datos demo. Elige [1] si falta preparar el entorno backend.' }
+    } finally {
+        Pop-Location
+    }
+    Write-Host '[OK] Datos demo sinteticos cargados. No se deben usar en una base con datos reales.'
 }
 
 function Write-ReadinessResult {
@@ -801,8 +821,13 @@ if ($preparationChoice -eq 'Docker') {
     exit 0
 }
 
-if ($preparationChoice -eq 'Migrate') {
-    if (-not (Confirm-PreparationChoice 'iniciar PostgreSQL si hace falta y aplicar solo las migraciones Django')) {
+if ($preparationChoice -eq 'Migrate' -or $preparationChoice -eq 'SeedDemo') {
+    $maintenanceDescription = if ($preparationChoice -eq 'SeedDemo') {
+        'iniciar PostgreSQL si hace falta, aplicar migraciones y cargar datos demo sinteticos'
+    } else {
+        'iniciar PostgreSQL si hace falta y aplicar solo las migraciones Django'
+    }
+    if (-not (Confirm-PreparationChoice $maintenanceDescription)) {
         Write-Host 'No se realizo ninguna accion.'
         exit 0
     }
@@ -814,7 +839,7 @@ if ($preparationChoice -eq 'Migrate') {
         Install-DockerDesktop
     }
     if (-not (Start-DockerDaemon)) {
-        throw 'Docker no se pudo iniciar. Abre Docker Desktop manualmente, espera a que este listo y vuelve a elegir [5].'
+        throw 'Docker no se pudo iniciar. Abre Docker Desktop manualmente, espera a que este listo y vuelve a elegir [5] o [6].'
     }
 
     Push-Location $repositoryRoot
@@ -828,6 +853,9 @@ if ($preparationChoice -eq 'Migrate') {
     }
 
     Invoke-ModuloMigrations
+    if ($preparationChoice -eq 'SeedDemo') {
+        Invoke-ModuloDemoSeed
+    }
     Write-Host '[OK] No se modificaron las dependencias del backend ni el frontend.'
     exit 0
 }

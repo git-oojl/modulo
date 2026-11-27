@@ -33,11 +33,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
 
 Funciona con Windows PowerShell 5.1 y PowerShell 7; si la política local lo permite, también puedes usar `.\scripts\setup.ps1`.
 
-Usa `[1]` para preparar un entorno ya equipado, `[2]` para una instalación completa, `[3]` para comprobar el estado, `[4]` para Docker/PostgreSQL (con migraciones opcionales) y `[5]` para solo migraciones. El primer `npm ci` puede tardar; las repeticiones omiten esa instalación si el lockfile y las dependencias siguen válidos. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles y diagnósticos.
+Usa `[1]` para preparar un entorno ya equipado, `[2]` para una instalación completa, `[3]` para comprobar el estado, `[4]` para Docker/PostgreSQL (con migraciones opcionales), `[5]` para solo migraciones y `[6]` para migrar y cargar la semilla sintética. El primer `npm ci` puede tardar; las repeticiones omiten esa instalación si el lockfile y las dependencias siguen válidos. Consulta [la guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) para los detalles y diagnósticos.
 
-![Menu del preparador de Windows](docs/screenshots/setup-menu-current.png)
-
-La [guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) también muestra el informe de comprobación `[3]`.
+La [guía de herramientas](docs/INSTALACION_HERRAMIENTAS.md) también explica el
+informe de comprobación `[3]`.
 
 ### Preparacion manual
 
@@ -174,6 +173,11 @@ modulo/
 ├── scripts/                  Herramientas para el equipo
 └── docs/                     Material de apoyo
 ```
+
+Para colaborar con una IA, empieza por [`goofy.md`](goofy.md): es el contrato
+versionado de entorno, comandos y disciplina de cambios. La guía para formular
+encargos y dar el contexto mínimo está en
+[`docs/WORKING_WITH_AGENTS.md`](docs/WORKING_WITH_AGENTS.md).
 
 - Una migración Django es el mecanismo para compartir cambios de esquema: no se intercambian bases locales ni se versionan datos privados.
 - Los cambios de dependencias Python actualizan `pyproject.toml` **y** `uv.lock`; los del frontend actualizan `package.json` **y** `package-lock.json`. Se versionan ambos archivos de cada pareja.
