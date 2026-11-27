@@ -1,16 +1,16 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FeaturePlaceholderComponent } from '../../../../shared/ui/feature-placeholder/feature-placeholder.component';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { AgentsApiService } from '../../data-access/agents-api.service';
+import { UserReference } from '../../../../core/api/api.models';
 @Component({
   selector: 'app-agent-directory-page',
-  imports: [FeaturePlaceholderComponent],
+  imports: [],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './agent-directory-page.component.html',
   styleUrl: './agent-directory-page.component.scss',
 })
 export class AgentDirectoryPageComponent {
-  readonly page = {
-    eyebrow: 'Equipo',
-    title: 'Asesores',
-    description: 'Directorio y actividad por asesor para gerencia.',
-  };
+  private readonly api = inject(AgentsApiService);
+  readonly agents = signal<UserReference[]>([]);
+  readonly error = signal('');
+  constructor() { this.api.list().subscribe({ next: ({ results }) => this.agents.set(results), error: () => this.error.set('No se pudo cargar el directorio de asesores.') }); }
 }
