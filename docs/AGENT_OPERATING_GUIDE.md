@@ -1,4 +1,4 @@
-# Contrato operativo para agentes de Modulo
+# Guía operativa para agentes de código
 
 Este repositorio está pensado para que una persona o un agente de código pueda
 trabajar de forma segura en Windows. Antes de cambiar comportamiento de
@@ -117,7 +117,7 @@ una base con datos reales y nunca publiques contraseñas, dumps o archivos
 
 Cuando otra IA no pueda inspeccionar todo el repositorio, compártele:
 
-1. `goofy.md` y `PROJECT_BIBLE.md`.
+1. Esta guía y `PROJECT_BIBLE.md`.
 2. La vista, modelo o archivo exacto que se desea cambiar.
 3. `docs/ARCHITECTURE.md`, `docs/BACKEND_GUIDE.md` y, si aplica,
    `docs/API_BACKEND.md`.

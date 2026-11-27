@@ -10,13 +10,19 @@ La [Biblia del Proyecto](../PROJECT_BIBLE.md) define el producto, alcance y prio
 | [POSTGRESQL.md](POSTGRESQL.md) | Operar e inspeccionar PostgreSQL local. |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Preparar, ejecutar y validar el proyecto. |
 | [DATA_DEMO.md](DATA_DEMO.md) | Cargar y usar datos sintéticos. |
+| [DATA_MODEL.md](DATA_MODEL.md) | Entidades, relaciones, invariantes y retención. |
+| [TECHNICAL_DECISIONS.md](TECHNICAL_DECISIONS.md) | Decisiones técnicas ya tomadas y sus consecuencias. |
+| [EXTERNAL_INTEGRATIONS.md](EXTERNAL_INTEGRATIONS.md) | Límites de exportaciones, archivos y futuros proveedores. |
+| [AGENT_OPERATING_GUIDE.md](AGENT_OPERATING_GUIDE.md) | Runtime, comandos y contrato para agentes de código. |
 | [WORKING_WITH_AGENTS.md](WORKING_WITH_AGENTS.md) | Colaborar con agentes de código. |
 | [INSTALACION_HERRAMIENTAS.md](INSTALACION_HERRAMIENTAS.md) | Instalar o diagnosticar uv, Volta y Docker. |
+| [../frontend/README.md](../frontend/README.md) | Cliente Angular, sesión, proxy y contrato de integración. |
+| [../backend/README.md](../backend/README.md) | Inicio rápido y mapa del backend Django. |
 
-El contrato operativo que una IA debe leer antes de modificar el repositorio es
-[`goofy.md`](../goofy.md). No es una carpeta ni una configuración especial: es
-documentación versionada que describe el runtime, comandos canónicos y límites
-de cambio del proyecto.
+Una IA debe leer primero la
+[`Guía operativa para agentes`](AGENT_OPERATING_GUIDE.md). Es documentación
+versionada que describe el runtime, comandos canónicos y límites de cambio del
+proyecto.
 
 ## Fuente de verdad
 

@@ -174,7 +174,8 @@ modulo/
 └── docs/                     Material de apoyo
 ```
 
-Para colaborar con una IA, empieza por [`goofy.md`](goofy.md): es el contrato
+Para colaborar con una IA, empieza por la
+[`Guía operativa para agentes`](docs/AGENT_OPERATING_GUIDE.md): es el contrato
 versionado de entorno, comandos y disciplina de cambios. La guía para formular
 encargos y dar el contexto mínimo está en
 [`docs/WORKING_WITH_AGENTS.md`](docs/WORKING_WITH_AGENTS.md).

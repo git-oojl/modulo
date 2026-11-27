@@ -1,6 +1,7 @@
 # Cómo encargar trabajo a una IA
 
-El contrato que el agente debe leer primero está en [`../goofy.md`](../goofy.md).
+El contrato que el agente debe leer primero está en
+[`AGENT_OPERATING_GUIDE.md`](AGENT_OPERATING_GUIDE.md).
 Esta guía sirve a quien formula el encargo: reduce contexto perdido, evita que
 la IA invente arquitectura y hace verificable la entrega.
 
@@ -8,7 +9,7 @@ la IA invente arquitectura y hace verificable la entrega.
 
 No hace falta pegar todo el repositorio. Comparte siempre:
 
-1. `goofy.md` y la sección relevante de `PROJECT_BIBLE.md`.
+1. `AGENT_OPERATING_GUIDE.md` y la sección relevante de `PROJECT_BIBLE.md`.
 2. El resultado observable que buscas y los archivos o dominio en alcance.
 3. La superficie permitida: código, migraciones, pruebas, documentación,
    dependencias y commits.
@@ -38,7 +39,8 @@ Límites: qué no debe tocar y si debe detenerse ante una decisión de producto.
 
 Ejemplo de cambio de backend:
 
-> Implementa la exportación CSV de citas para gerencia. Lee `goofy.md`, la
+> Implementa la exportación CSV de citas para gerencia. Lee la guía operativa,
+> la
 > Biblia y la API actual. Respeta la visibilidad por asesor, usa
 > `integrations/`, añade pruebas y actualiza el contrato API. Puedes crear
 > migraciones si son necesarias. No cambies frontend ni dependencias. Haz los
@@ -77,6 +79,6 @@ Pide que la respuesta final diga, como mínimo:
 - No añadir dependencias por comodidad sin explicar por qué las existentes no
   bastan.
 
-La Biblia define el producto; `goofy.md` define la operación reproducible. La
+La Biblia define el producto; la guía operativa define la operación reproducible. La
 documentación técnica debe conservar contratos durables, no narrar flujos de
 interfaz que aún pueden cambiar.
