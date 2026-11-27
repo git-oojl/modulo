@@ -34,11 +34,11 @@
 
     <div class="sidebar__profile">
       <div class="sidebar__avatar">
-        <span aria-hidden="true">U</span>
+        <span aria-hidden="true">{{ displayName.charAt(0) }}</span>
       </div>
       <div class="sidebar__user-info link-text">
-        <strong>Usuario de ejemplo</strong>
-        <span>Perfil provisional</span>
+        <strong>{{ displayName }}</strong>
+        <span>{{ roleLabel }}</span>
       </div>
     </div>
   </div>

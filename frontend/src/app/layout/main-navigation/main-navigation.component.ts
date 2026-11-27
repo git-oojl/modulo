@@ -16,7 +16,7 @@ export class MainNavigationComponent {
   private router = inject(Router);
   private auth = inject(AuthService);
 
-  menuItems = [
+  private readonly allMenuItems = [
     { label: 'Dashboard', path: '/app/dashboard', icon: 'dashboard' },
     { label: 'Contactos', path: '/app/contactos', icon: 'people' },
     { label: 'Propiedades', path: '/app/propiedades', icon: 'home_work' },
@@ -26,6 +26,18 @@ export class MainNavigationComponent {
     { label: 'Usuarios', path: '/app/usuarios', icon: 'manage_accounts' },
     { label: 'Configuración', path: '/app/configuracion', icon: 'settings' },
   ];
+
+  get menuItems() {
+    const role = this.auth.user()?.role;
+    return this.allMenuItems.filter((item) => {
+      if (['Asesores'].includes(item.label)) return role === 'gerencia' || role === 'administrador';
+      if (['Usuarios', 'Configuración'].includes(item.label)) return role === 'administrador';
+      return true;
+    });
+  }
+
+  get displayName(): string { return this.auth.user()?.displayName ?? 'Usuario'; }
+  get roleLabel(): string { return this.auth.user()?.role ?? 'Sin sesión'; }
 
   logout(): void {
     this.auth.logout().subscribe({
