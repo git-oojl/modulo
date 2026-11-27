@@ -96,7 +96,7 @@
     } @else if (filteredProperties().length) {
       <div class="property-grid">
         @for (property of filteredProperties(); track property.id) {
-          <article class="property-card">
+          <a class="property-card" [routerLink]="['/propiedades', property.id]" [attr.aria-label]="'Ver ' + property.title">
             <div class="property-image-wrap">
               <img
                 class="property-image"
@@ -146,7 +146,7 @@
                 >
               </div>
             </div>
-          </article>
+          </a>
         }
       </div>
     } @else {

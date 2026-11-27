@@ -8,7 +8,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from config.views import health_check
 from core.dashboard import DashboardView
-from properties.public_views import PublicInquiryView
+from properties.public_views import PublicCatalogueStatusView, PublicInquiryView
 from properties.views import PublicPropertyViewSet
 from rest_framework.routers import DefaultRouter
 
@@ -31,8 +31,9 @@ urlpatterns = [
     path('api/v1/sources/', include('organizations.source_urls')),
     path('api/v1/integrations/', include('integrations.urls')),
     path('api/v1/dashboard/', DashboardView.as_view(), name='dashboard'),
-    path('api/v1/public/', include(public_router.urls)),
+    path('api/v1/public/catalogue-status/', PublicCatalogueStatusView.as_view(), name='public-catalogue-status'),
     path('api/v1/public/inquiries/', PublicInquiryView.as_view(), name='public-inquiry'),
+    path('api/v1/public/', include(public_router.urls)),
 ]
 
 if settings.DEBUG:

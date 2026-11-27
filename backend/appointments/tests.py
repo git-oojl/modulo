@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.test import TestCase
 from django.utils import timezone
+from rest_framework.test import APIClient
 
 from accounts.models import User
 from contacts.models import Contact, ContactActivity, FollowUp
@@ -23,3 +24,17 @@ class AppointmentServiceTests(TestCase):
         self.assertEqual(self.appointment.status, Appointment.Status.COMPLETED)
         self.assertTrue(ContactActivity.objects.filter(contact=self.contact, content="Visita realizada.").exists())
         self.assertTrue(FollowUp.objects.filter(contact=self.contact, note="Enviar propuesta.").exists())
+
+    def test_gerencia_crea_cita_sin_asesor_explicito(self):
+        manager = User.objects.create_user(username="gerencia", role=User.Role.MANAGER)
+        client = APIClient()
+        client.force_authenticate(manager)
+
+        response = client.post(
+            "/api/v1/appointments/",
+            {"contact": str(self.contact.id), "purpose": Appointment.Purpose.VISIT, "starts_at": (timezone.now() + timedelta(days=3)).isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Appointment.objects.get(id=response.json()["id"]).advisor, manager)

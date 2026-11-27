@@ -34,7 +34,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         contact = serializer.validated_data["contact"]
         if not is_manager(self.request.user) and contact.advisor_id != self.request.user.id:
             self.permission_denied(self.request)
-        serializer.save(advisor=serializer.validated_data.get("advisor") if is_manager(self.request.user) else self.request.user, created_by=self.request.user)
+        advisor = serializer.validated_data.get("advisor") if is_manager(self.request.user) else self.request.user
+        serializer.save(advisor=advisor or self.request.user, created_by=self.request.user)
 
     def perform_update(self, serializer):
         if not is_manager(self.request.user) and self.get_object().advisor_id != self.request.user.id:

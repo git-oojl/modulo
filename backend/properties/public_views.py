@@ -35,6 +35,13 @@ class PublicInquiryThrottle(AnonRateThrottle):
     scope = "public_inquiries"
 
 
+class PublicCatalogueStatusView(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request):
+        return Response({"enabled": Organization.objects.filter(public_catalogue_enabled=True).exists()})
+
+
 class PublicInquiryView(APIView):
     permission_classes = (AllowAny,)
     throttle_classes = (PublicInquiryThrottle,)

@@ -24,6 +24,12 @@ class PublicCatalogueTests(TestCase):
         self.assertNotIn("address", data)
         self.assertNotIn("advisor", data)
 
+    def test_estado_publico_del_catalogo_no_expone_datos_de_organizacion(self):
+        response = APIClient().get("/api/v1/public/catalogue-status/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"enabled": True})
+
     def test_consulta_publica_crea_contacto_sin_asesor(self):
         response = APIClient().post("/api/v1/public/inquiries/", {"property": str(self.property.id), "name": "Interesada", "phone": "5550000001", "email": "interesada@example.test", "message": "Quiero conocerla.", "privacy_accepted": True}, format="json")
 
