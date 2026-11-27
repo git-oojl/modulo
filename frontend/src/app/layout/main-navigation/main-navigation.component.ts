@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-main-navigation',
@@ -13,6 +14,7 @@ import { CommonModule } from '@angular/common';
 })
 export class MainNavigationComponent {
   private router = inject(Router);
+  private auth = inject(AuthService);
 
   menuItems = [
     { label: 'Dashboard', path: '/app/dashboard', icon: 'dashboard' },
@@ -25,7 +27,13 @@ export class MainNavigationComponent {
     { label: 'Configuración', path: '/app/configuracion', icon: 'settings' },
   ];
 
-  logout() {
-    this.router.navigate(['/login']);
+  logout(): void {
+    this.auth.logout().subscribe({
+      next: () => void this.router.navigate(['/login']),
+      error: () => {
+        this.auth.clearLocalSession();
+        void this.router.navigate(['/login']);
+      },
+    });
   }
 }
