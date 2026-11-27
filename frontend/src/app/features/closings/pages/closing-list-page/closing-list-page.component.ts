@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { ClosingDto, ClosingsApiService } from '../../data-access/closings-api.service';
 
 @Component({
   selector: 'app-closing-list-page',
@@ -11,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './closing-list-page.component.scss',
 })
 export class ClosingListPageComponent {
+  private readonly api = inject(ClosingsApiService);
   readonly page = {
     eyebrow: 'Operaciones',
     title: 'Cierres',
@@ -60,6 +62,8 @@ export class ClosingListPageComponent {
       estadoComision: 'reportada_pagada'
     }
   ];
+  constructor() { this.load(); }
+  load(): void { this.api.list().subscribe({ next: ({ results }) => this.cierres = results.map((item) => this.toRow(item)) }); }
 
   limpiarFiltros() {
     this.busqueda = '';
@@ -113,6 +117,12 @@ export class ClosingListPageComponent {
   }
 
   eliminarCierre(id: string) {
-    this.cierres = this.cierres.filter(c => c.id !== id);
+    this.api.void(id).subscribe({ next: () => this.load() });
+  }
+
+  private toRow(item: ClosingDto) {
+    const commission = item.commission?.amount ?? '—';
+    const percentage = item.commission?.percentage ? ' (' + item.commission.percentage + '%)' : '';
+    return { id: item.id, fecha: new Date(item.closed_on).toLocaleDateString('es-MX'), propiedad: item.property_detail?.title ?? item.property, contacto: item.contact_detail?.name ?? item.contact, asesor: item.advisor.display_name, tipoOperacion: item.operation === 'venta' ? 'Venta' : 'Renta', monto: item.amount + ' ' + item.currency, comision: commission + percentage, status: item.status, estadoComision: item.commission?.status ?? 'pendiente' };
   }
 }

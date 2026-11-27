@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { AppointmentsApiService, AppointmentDto } from '../../data-access/appointments-api.service';
 
 @Component({
   selector: 'app-appointments-page',
@@ -11,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './appointments-page.component.scss',
 })
 export class AppointmentsPageComponent {
+  private readonly api = inject(AppointmentsApiService);
   busqueda = '';
   isModalOpen = false;
   isEditMode = false;
@@ -66,6 +68,8 @@ export class AppointmentsPageComponent {
       observaciones: 'Firma de contratos.'
     },
   ];
+  constructor() { this.load(); }
+  load(): void { this.api.list().subscribe({ next: ({ results }) => this.citas = results.map((item) => this.toRow(item)) }); }
 
   limpiarFiltros() {
     this.busqueda = '';
@@ -127,7 +131,11 @@ export class AppointmentsPageComponent {
   }
 
   eliminarCita(id: string) {
-    this.citas = this.citas.filter(c => c.id !== id);
-    console.log('Eliminando cita:', id);
+    this.api.cancel(id).subscribe({ next: () => this.load() });
+  }
+
+  private toRow(item: AppointmentDto) {
+    const date = new Date(item.starts_at);
+    return { id: item.id, fecha: item.starts_at.slice(0, 16), fechaDisplay: date.toLocaleString('es-MX'), contacto: item.contact_detail?.name ?? item.contact, propiedad: item.property_detail?.title ?? '', proposito: item.purpose, status: item.status, agente: item.advisor.display_name, origen: item.source ?? '', observaciones: item.notes };
   }
 }
