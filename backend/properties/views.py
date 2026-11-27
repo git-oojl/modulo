@@ -1,5 +1,5 @@
 from django.db.models import Q
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -28,7 +28,12 @@ class PropertyViewSet(viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        serializer.save(advisor=serializer.validated_data.get("advisor") if is_manager(self.request.user) else self.request.user)
+        advisor = serializer.validated_data.get("advisor") if is_manager(self.request.user) else self.request.user
+        if advisor is None:
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError({"advisor_id": "Gerencia debe asignar un asesor responsable."})
+        serializer.save(advisor=advisor)
 
     def perform_update(self, serializer):
         property = self.get_object()
@@ -56,6 +61,25 @@ class PropertyViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(property=property)
         return Response(serializer.data, status=201)
+
+    @action(detail=True, methods=["patch", "delete"], url_path="media/(?P<media_id>[^/.]+)")
+    def media_item(self, request, id=None, media_id=None):
+        property = self.get_object()
+        if not is_manager(request.user) and property.advisor_id != request.user.id:
+            self.permission_denied(request)
+        try:
+            media = property.media.get(id=media_id)
+        except PropertyMedia.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+
+            raise NotFound("No existe ese archivo.")
+        if request.method == "DELETE":
+            media.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = PropertyMediaSerializer(media, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class PublicPropertyViewSet(viewsets.ReadOnlyModelViewSet):

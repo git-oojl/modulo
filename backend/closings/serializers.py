@@ -33,13 +33,3 @@ class ClosingSerializer(serializers.ModelSerializer):
         if property and operation and property.operation != operation:
             raise serializers.ValidationError({"operation": "Debe coincidir con la operación de la propiedad."})
         return attrs
-
-    def update(self, instance, validated_data):
-        commission_data = validated_data.pop("commission", None)
-        closing = super().update(instance, validated_data)
-        if commission_data is not None:
-            commission = closing.commission
-            for field, value in commission_data.items():
-                setattr(commission, field, value)
-            commission.save()
-        return closing

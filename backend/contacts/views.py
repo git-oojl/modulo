@@ -29,9 +29,19 @@ class ContactViewSet(viewsets.ModelViewSet):
         serializer.save(advisor=serializer.validated_data.get("advisor") if is_manager(self.request.user) else self.request.user)
 
     def perform_update(self, serializer):
-        if not is_manager(self.request.user) and self.get_object().advisor_id != self.request.user.id:
+        contact = self.get_object()
+        if not is_manager(self.request.user) and contact.advisor_id != self.request.user.id:
             self.permission_denied(self.request)
-        serializer.save()
+        previous_status = contact.status
+        contact = serializer.save()
+        if contact.status != previous_status:
+            ContactActivity.objects.create(
+                contact=contact,
+                type=ContactActivity.Type.STATUS_CHANGE,
+                content=f"Estado cambiado de {previous_status} a {contact.status}.",
+                occurred_at=timezone.now(),
+                created_by=self.request.user,
+            )
 
     def destroy(self, request, *args, **kwargs):
         contact = self.get_object()

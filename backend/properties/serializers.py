@@ -12,6 +12,14 @@ class PropertyMediaSerializer(serializers.ModelSerializer):
         fields = ("id", "file", "alt_text", "sort_order", "is_cover", "created_at")
         read_only_fields = ("id", "created_at")
 
+    def validate_file(self, value):
+        allowed_types = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+        if value.size > 10 * 1024 * 1024:
+            raise serializers.ValidationError("El archivo no puede superar 10 MB.")
+        if getattr(value, "content_type", "") not in allowed_types:
+            raise serializers.ValidationError("Solo se permiten imágenes JPEG, PNG, WEBP o archivos PDF.")
+        return value
+
 
 class PropertySerializer(serializers.ModelSerializer):
     advisor = UserReferenceSerializer(read_only=True)
@@ -25,6 +33,17 @@ class PropertySerializer(serializers.ModelSerializer):
             "bedrooms", "bathrooms", "parking_spaces", "area_m2", "land_area_m2", "features", "advisor", "advisor_id", "is_public", "media", "created_at", "updated_at",
         )
         read_only_fields = ("id", "created_at", "updated_at", "advisor", "media")
+
+    def validate(self, attrs):
+        status = attrs.get("status", getattr(self.instance, "status", None))
+        is_public = attrs.get("is_public", getattr(self.instance, "is_public", False))
+        if is_public and status != Property.Status.ACTIVE:
+            raise serializers.ValidationError({"is_public": "Solo una propiedad activa puede publicarse."})
+        if status == Property.Status.CLOSED and (self.instance is None or self.instance.status != Property.Status.CLOSED):
+            raise serializers.ValidationError({"status": "Una propiedad se cierra únicamente al registrar un cierre."})
+        if self.instance and self.instance.status == Property.Status.CLOSED and status != Property.Status.CLOSED:
+            raise serializers.ValidationError({"status": "Anular un cierre no reactiva automáticamente una propiedad."})
+        return attrs
 
 
 class PublicPropertySerializer(serializers.ModelSerializer):

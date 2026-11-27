@@ -6,7 +6,7 @@ from core.permissions import IsManager, is_manager, scoped_closing_queryset
 
 from .models import Closing
 from .serializers import ClosingSerializer, CommissionEstimateSerializer
-from .services import register_closing, void_closing
+from .services import correct_closing, register_closing, void_closing
 
 
 class ClosingViewSet(viewsets.ModelViewSet):
@@ -41,6 +41,20 @@ class ClosingViewSet(viewsets.ModelViewSet):
         except ValueError as error:
             return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(closing).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        closing = self.get_object()
+        serializer = self.get_serializer(closing, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        try:
+            corrected = correct_closing(closing=closing, data=dict(serializer.validated_data))
+        except ValueError as error:
+            return Response({"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(corrected).data)
+
+    def destroy(self, request, *args, **kwargs):
+        return Response({"detail": "Los cierres se anulan; no se eliminan."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     @action(detail=True, methods=["post"])
     def void(self, request, id=None):

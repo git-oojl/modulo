@@ -34,3 +34,14 @@ class PublicCatalogueTests(TestCase):
         self.assertIsNone(contact.advisor)
         self.assertEqual(contact.source.name, "sitio_web")
         self.assertTrue(PropertyInterest.objects.filter(contact=contact, property=self.property).exists())
+
+    def test_inventario_no_puede_cerrar_sin_registrar_cierre(self):
+        manager = User.objects.create_user(username="gerencia", role=User.Role.MANAGER)
+        client = APIClient()
+        client.force_authenticate(manager)
+
+        response = client.patch(f"/api/v1/properties/{self.property.id}/", {"status": "cerrada"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.property.refresh_from_db()
+        self.assertEqual(self.property.status, Property.Status.ACTIVE)

@@ -26,7 +26,11 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(trim_whitespace=False, write_only=True)
 
     def validate(self, attrs):
-        user = authenticate(username=attrs["username"], password=attrs["password"])
+        identifier = attrs["username"].strip()
+        username = identifier
+        if "@" in identifier:
+            username = User.objects.filter(email__iexact=identifier).values_list("username", flat=True).first() or identifier
+        user = authenticate(username=username, password=attrs["password"])
         if not user or not user.is_active:
             raise serializers.ValidationError("Credenciales inválidas.")
         attrs["user"] = user

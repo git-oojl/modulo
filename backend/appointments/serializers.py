@@ -28,6 +28,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"ends_at": "Debe ser posterior al inicio."})
         if status == Appointment.Status.COMPLETED and not result.strip():
             raise serializers.ValidationError({"result": "Completar una cita exige registrar un resultado."})
+        if status == Appointment.Status.COMPLETED and (self.instance is None or self.instance.status != Appointment.Status.COMPLETED):
+            raise serializers.ValidationError({"status": "Completa la cita mediante la acción de resultado para conservar el historial."})
         return attrs
 
 

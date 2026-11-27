@@ -21,12 +21,23 @@ class DashboardView(APIView):
         now = timezone.now()
         end = now + timedelta(days=min(max(int(request.query_params.get("days", 14)), 1), 90))
         appointments = scoped_appointment_queryset(Appointment.objects.select_related("contact", "property", "advisor"), request.user)
-        contacts = scoped_contact_queryset(ContactActivity.objects.select_related("contact", "created_by"), request.user)
+        contacts = ContactActivity.objects.select_related("contact", "created_by")
         follow_ups = FollowUp.objects.select_related("contact", "assigned_to")
         if not (request.user.is_superuser or request.user.role in {"gerencia", "administrador"}):
             follow_ups = follow_ups.filter(assigned_to=request.user)
         properties = scoped_property_queryset(Property.objects.all(), request.user)
         closings = scoped_closing_queryset(Closing.objects.all(), request.user)
+        is_manager = request.user.is_superuser or request.user.role in {"gerencia", "administrador"}
+        if is_manager and (advisor := request.query_params.get("advisor")):
+            appointments = appointments.filter(advisor__public_id=advisor)
+            follow_ups = follow_ups.filter(assigned_to__public_id=advisor)
+            properties = properties.filter(advisor__public_id=advisor)
+            closings = closings.filter(advisor__public_id=advisor)
+            contacts = contacts.filter(contact__advisor__public_id=advisor)
+        elif not is_manager:
+            contacts = contacts.filter(contact__advisor=request.user)
+        if property_status := request.query_params.get("property_status"):
+            properties = properties.filter(status=property_status)
         if date_from := request.query_params.get("from"):
             closings = closings.filter(closed_on__gte=date_from)
         if date_to := request.query_params.get("to"):

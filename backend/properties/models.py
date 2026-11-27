@@ -52,6 +52,12 @@ class Property(UUIDTimeStampedModel):
     class Meta:
         ordering = ("-updated_at",)
         indexes = [models.Index(fields=("status", "operation")), models.Index(fields=("advisor", "status"))]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(is_public=False) | models.Q(status="activa"),
+                name="public_property_must_be_active",
+            ),
+        ]
 
     @property
     def is_publicly_visible(self):

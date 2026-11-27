@@ -25,6 +25,13 @@ class Closing(UUIDTimeStampedModel):
     class Meta:
         ordering = ("-closed_on", "-created_at")
         indexes = [models.Index(fields=("advisor", "closed_on")), models.Index(fields=("status", "closed_on"))]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("property",),
+                condition=models.Q(status="vigente"),
+                name="one_current_closing_per_property",
+            ),
+        ]
 
 
 class CommissionEstimate(UUIDTimeStampedModel):
