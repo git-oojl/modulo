@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PropertiesApiService, PropertyDto } from '../../data-access/properties-api.service';
 
 export interface Propiedad {
-  id: number;
+  id: number | string;
   clave: string;
   titulo: string;
   direccion: string;
@@ -23,6 +24,7 @@ export interface Propiedad {
   styleUrl: './properties-page.component.scss',
 })
 export class PropertiesPageComponent {
+  private readonly api = inject(PropertiesApiService);
   // --- DATOS DE PRUEBA ---
   propiedades: Propiedad[] = [
     {
@@ -110,6 +112,16 @@ export class PropertiesPageComponent {
       estado: 'Archivadas',
     },
   ];
+
+  constructor() {
+    this.loadProperties();
+  }
+
+  loadProperties(): void {
+    this.api.list().subscribe({
+      next: ({ results }) => (this.propiedades = results.map((property) => this.toRow(property))),
+    });
+  }
 
   // --- VARIABLES DE FILTROS ---
   filtroBusqueda = '';
@@ -254,6 +266,23 @@ export class PropertiesPageComponent {
   }
 
   guardarPropiedad() {
+    const payload = {
+      title: this.propiedadForm.titulo,
+      type: this.toApiType(this.propiedadForm.tipo),
+      operation: this.toApiOperation(this.propiedadForm.operacion),
+      status: this.toApiStatus(this.propiedadForm.estado),
+      price: String(this.propiedadForm.precio || 0).replace(/[^0-9.]/g, ''),
+      currency: this.propiedadForm.precio.includes('USD') ? 'USD' : 'MXN',
+      city: this.propiedadForm.direccion || 'Tijuana',
+      neighborhood: this.propiedadForm.sector,
+      address: this.propiedadForm.direccion,
+      public_location: this.propiedadForm.sector,
+      is_public: this.toApiStatus(this.propiedadForm.estado) === 'activa',
+    };
+    const request = this.esEdicion ? this.api.update(String(this.propiedadForm.id), payload) : this.api.create(payload);
+    request.subscribe({ next: () => { this.loadProperties(); this.cerrarModal(); } });
+    return;
+
     if (this.esEdicion) {
       // Buscar el índice y actualizar
       const index = this.propiedades.findIndex((p) => p.id === this.propiedadForm.id);
@@ -263,15 +292,18 @@ export class PropertiesPageComponent {
     } else {
       // Crear nueva
       const nuevoId =
-        this.propiedades.length > 0 ? Math.max(...this.propiedades.map((p) => p.id)) + 1 : 1;
+        this.propiedades.length > 0 ? Math.max(...this.propiedades.map((p) => Number(p.id) || 0)) + 1 : 1;
       this.propiedades.push({ ...this.propiedadForm, id: nuevoId });
     }
     this.cerrarModal();
   }
 
-  eliminarPropiedad(id: number) {
+  eliminarPropiedad(id: number | string) {
     if (confirm('¿Estás seguro de eliminar esta propiedad?')) {
-      this.propiedades = this.propiedades.filter((p) => p.id !== id);
+      this.api.archive(String(id)).subscribe({ next: () => {
+        this.propiedades = this.propiedades.filter((p) => p.id !== id);
+        if (this.propiedadesPaginadas.length === 0 && this.paginaActual > 1) this.paginaActual--;
+      } });
       // Si la página actual queda vacía después de borrar, retrocedemos una página
       if (this.propiedadesPaginadas.length === 0 && this.paginaActual > 1) {
         this.paginaActual--;
@@ -292,5 +324,38 @@ export class PropertiesPageComponent {
       agente: '',
       estado: 'Publicadas',
     };
+  }
+
+  private toRow(property: PropertyDto): Propiedad {
+    return {
+      id: property.id,
+      clave: property.id.slice(0, 8).toUpperCase(),
+      titulo: property.title,
+      direccion: property.address || property.public_location || property.city,
+      sector: property.neighborhood || property.city,
+      operacion: property.operation,
+      tipo: property.type,
+      precio: new Intl.NumberFormat('es-MX', { style: 'currency', currency: property.currency || 'MXN' }).format(Number(property.price)),
+      agente: property.advisor?.display_name ?? 'Sin asignar',
+      estado: property.status,
+    };
+  }
+
+  private toApiStatus(value: string): 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada' {
+    const labels: Record<string, 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada'> = { Publicadas: 'activa', 'En proceso': 'borrador', Vendidas: 'cerrada', Archivadas: 'archivada', Reservadas: 'reservada' };
+    return labels[value] ?? (['borrador', 'activa', 'reservada', 'cerrada', 'archivada'].includes(value) ? value as 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada' : 'borrador');
+  }
+
+  private toApiType(value: string): 'casa' | 'departamento' | 'terreno' | 'oficina' | 'comercial' | 'otro' {
+    const normalized = value.toLowerCase();
+    if (normalized.includes('casa') || normalized.includes('residencial')) return 'casa';
+    if (normalized.includes('depto') || normalized.includes('departamento')) return 'departamento';
+    if (normalized.includes('terreno')) return 'terreno';
+    if (normalized.includes('comercial') || normalized.includes('local')) return 'comercial';
+    return 'otro';
+  }
+
+  private toApiOperation(value: string): 'venta' | 'renta' {
+    return value.toLowerCase() === 'renta' ? 'renta' : 'venta';
   }
 }
