@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from accounts.models import User
 from accounts.serializers import UserReferenceSerializer
+from properties.models import Property
 from properties.serializers import PropertySerializer
 
 from .models import Contact, ContactActivity, FollowUp, PropertyInterest
@@ -36,7 +37,7 @@ class FollowUpSerializer(serializers.ModelSerializer):
 
 class PropertyInterestSerializer(serializers.ModelSerializer):
     property = PropertySerializer(read_only=True)
-    property_id = serializers.UUIDField(source="property_id", write_only=True)
+    property_id = serializers.PrimaryKeyRelatedField(source="property", queryset=Property.objects.all(), write_only=True)
 
     class Meta:
         model = PropertyInterest
