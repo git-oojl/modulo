@@ -34,7 +34,7 @@
         </div>
         <div class="card-body">
           <h3>Activas</h3>
-          <p class="big-number">45 <span>Propiedades</span></p>
+          <p class="big-number">{{ propertyCount('activa') }} <span>Propiedades</span></p>
           <div class="gauge-container">
             <div class="gauge-track">
               <div class="gauge-fill" style="width: 70%"></div>
@@ -104,7 +104,7 @@
         <div class="card-body flex-row">
           <div class="stats">
             <p class="label">Comisiones pendientes</p>
-            <p class="amount">$15,500 MXN</p>
+          <p class="amount">{{ dashboard()?.closings?.amount || '0.00' }} MXN</p>
           </div>
           <div class="gauge-large">
             <div class="donut-chart"></div>
@@ -188,7 +188,7 @@
         <div class="op-icon">🖊️</div>
         <div class="op-info">
           <h4>Borradores</h4>
-          <p><strong>5 propiedades</strong></p>
+          <p><strong>{{ propertyCount('borrador') }} propiedades</strong></p>
         </div>
         <span class="trend">→</span>
       </div>
@@ -196,7 +196,7 @@
         <div class="op-icon">🏠</div>
         <div class="op-info">
           <h4>Activas</h4>
-          <p><strong>25 propiedades</strong></p>
+          <p><strong>{{ propertyCount('activa') }} propiedades</strong></p>
         </div>
         <span class="trend">→</span>
       </div>
@@ -204,7 +204,7 @@
         <div class="op-icon">🔑</div>
         <div class="op-info">
           <h4>Reservadas</h4>
-          <p><strong>8 propiedades</strong></p>
+          <p><strong>{{ propertyCount('reservada') }} propiedades</strong></p>
         </div>
         <span class="trend">→</span>
       </div>
@@ -212,7 +212,7 @@
         <div class="op-icon">✅</div>
         <div class="op-info">
           <h4>Cerradas</h4>
-          <p><strong>12 propiedades</strong></p>
+          <p><strong>{{ propertyCount('cerrada') }} propiedades</strong></p>
         </div>
         <span class="trend">→</span>
       </div>
@@ -220,7 +220,7 @@
         <div class="op-icon">📂</div>
         <div class="op-info">
           <h4>Archivadas</h4>
-          <p><strong>3 propiedades</strong></p>
+          <p><strong>{{ propertyCount('archivada') }} propiedades</strong></p>
         </div>
         <span class="trend">→</span>
       </div>
