@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 timezone="America/Tijuana",
                 default_language="es-MX",
                 currency="MXN",
-                public_catalogue_enabled=True,
+                public_catalogue_enabled=False,
             )
         sources = self.seed_sources()
         users = self.seed_users()
