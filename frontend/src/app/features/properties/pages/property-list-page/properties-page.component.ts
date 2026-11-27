@@ -337,13 +337,24 @@ export class PropertiesPageComponent {
       tipo: property.type,
       precio: new Intl.NumberFormat('es-MX', { style: 'currency', currency: property.currency || 'MXN' }).format(Number(property.price)),
       agente: property.advisor?.display_name ?? 'Sin asignar',
-      estado: property.status,
+      estado: this.toDisplayStatus(property.status),
     };
   }
 
   private toApiStatus(value: string): 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada' {
     const labels: Record<string, 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada'> = { Publicadas: 'activa', 'En proceso': 'borrador', Vendidas: 'cerrada', Archivadas: 'archivada', Reservadas: 'reservada' };
     return labels[value] ?? (['borrador', 'activa', 'reservada', 'cerrada', 'archivada'].includes(value) ? value as 'borrador' | 'activa' | 'reservada' | 'cerrada' | 'archivada' : 'borrador');
+  }
+
+  private toDisplayStatus(value: PropertyDto['status']): string {
+    const labels: Record<PropertyDto['status'], string> = {
+      activa: 'Publicadas',
+      borrador: 'En proceso',
+      reservada: 'Por expirar',
+      cerrada: 'Vendidas',
+      archivada: 'Archivadas',
+    };
+    return labels[value];
   }
 
   private toApiType(value: string): 'casa' | 'departamento' | 'terreno' | 'oficina' | 'comercial' | 'otro' {

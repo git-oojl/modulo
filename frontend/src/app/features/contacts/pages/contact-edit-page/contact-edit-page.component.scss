@@ -98,7 +98,8 @@
 }
 
 .contact-edit__field input,
-.contact-edit__field select {
+.contact-edit__field select,
+.contact-edit__field textarea {
   width: 100%;
   min-width: 0;
   height: 42px;
@@ -111,6 +112,12 @@
   color: #333;
   font: inherit;
   font-weight: 400;
+}
+
+.contact-edit__field textarea {
+  min-height: 96px;
+  padding: 0.75rem 0.875rem;
+  resize: vertical;
 }
 
 .contact-edit__footer {

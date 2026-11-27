@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
+import { Router } from '@angular/router';
 import { ClosingDto, ClosingsApiService } from '../../data-access/closings-api.service';
 
 @Component({
@@ -13,6 +14,7 @@ import { ClosingDto, ClosingsApiService } from '../../data-access/closings-api.s
 })
 export class ClosingListPageComponent {
   private readonly api = inject(ClosingsApiService);
+  private readonly router = inject(Router);
   readonly page = {
     eyebrow: 'Operaciones',
     title: 'Cierres',
@@ -20,53 +22,14 @@ export class ClosingListPageComponent {
   };
 
   busqueda = '';
-  isModalOpen = false;
-  isEditMode = false;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  currentClosing: any = {
-    id: '',
-    propiedad: '',
-    contacto: '',
-    asesor: '',
-    tipoOperacion: 'Venta',
-    monto: '',
-    comision: '',
-    status: 'vigente',
-    estadoComision: 'pendiente'
-  };
-
-  cierres = [
-    {
-      id: 'CLO-01',
-      fecha: '15 Nov 2026',
-      propiedad: 'Casa en Polanco',
-      contacto: 'Mya Flores Castañón',
-      asesor: 'Karina Torres',
-      tipoOperacion: 'Venta',
-      monto: '$8,000,000 MXN',
-      comision: '$400,000 MXN (5%)',
-      status: 'vigente',
-      estadoComision: 'pendiente'
-    },
-    {
-      id: 'CLO-02',
-      fecha: '16 Nov 2026',
-      propiedad: 'Renta Depto Roma',
-      contacto: 'Jennifer Estrada',
-      asesor: 'Paola Suarez',
-      tipoOperacion: 'Renta',
-      monto: '$15,000 MXN',
-      comision: '$15,000 MXN (100%)',
-      status: 'vigente',
-      estadoComision: 'reportada_pagada'
-    }
-  ];
+  selectedOperation = 'todas'; selectedStatus = 'todos'; selectedCommissionStatus = 'todos';
+  cierres: ReturnType<ClosingListPageComponent['toRow']>[] = [];
   constructor() { this.load(); }
   load(): void { this.api.list().subscribe({ next: ({ results }) => this.cierres = results.map((item) => this.toRow(item)) }); }
 
   limpiarFiltros() {
     this.busqueda = '';
+    this.selectedOperation = 'todas'; this.selectedStatus = 'todos'; this.selectedCommissionStatus = 'todos';
   }
 
   getStatusClass(status: string): string {
@@ -78,51 +41,26 @@ export class ClosingListPageComponent {
   }
 
   abrirModalNuevo() {
-    this.isEditMode = false;
-    this.currentClosing = {
-      id: 'CLO-0' + (this.cierres.length + 1),
-      propiedad: '',
-      contacto: '',
-      asesor: '',
-      tipoOperacion: 'Venta',
-      monto: '',
-      comision: '',
-      status: 'vigente',
-      estadoComision: 'pendiente'
-    };
-    this.isModalOpen = true;
+    void this.router.navigate(['/app/cierres/nuevo']);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abrirModalEditar(cierre: any) {
-    this.isEditMode = true;
-    this.currentClosing = { ...cierre };
-    this.isModalOpen = true;
-  }
-
-  cerrarModal() {
-    this.isModalOpen = false;
-  }
-
-  guardarCierre() {
-    if (this.isEditMode) {
-      const index = this.cierres.findIndex(c => c.id === this.currentClosing.id);
-      if (index !== -1) {
-        this.cierres[index] = { ...this.currentClosing };
-      }
-    } else {
-      this.cierres.push({ ...this.currentClosing, fecha: '17 Nov 2026' });
-    }
-    this.isModalOpen = false;
+    void this.router.navigate(['/app/cierres', cierre.id, 'editar']);
   }
 
   eliminarCierre(id: string) {
     this.api.void(id).subscribe({ next: () => this.load() });
   }
 
+  get filteredCierres() {
+    const query = this.busqueda.trim().toLowerCase();
+    return this.cierres.filter((item) => (!query || [item.propiedad, item.contacto, item.asesor].join(' ').toLowerCase().includes(query)) && (this.selectedOperation === 'todas' || item.operation === this.selectedOperation) && (this.selectedStatus === 'todos' || item.status === this.selectedStatus) && (this.selectedCommissionStatus === 'todos' || item.estadoComision === this.selectedCommissionStatus));
+  }
+
   private toRow(item: ClosingDto) {
     const commission = item.commission?.amount ?? '—';
     const percentage = item.commission?.percentage ? ' (' + item.commission.percentage + '%)' : '';
-    return { id: item.id, fecha: new Date(item.closed_on).toLocaleDateString('es-MX'), propiedad: item.property_detail?.title ?? item.property, contacto: item.contact_detail?.name ?? item.contact, asesor: item.advisor.display_name, tipoOperacion: item.operation === 'venta' ? 'Venta' : 'Renta', monto: item.amount + ' ' + item.currency, comision: commission + percentage, status: item.status, estadoComision: item.commission?.status ?? 'pendiente' };
+    return { id: item.id, fecha: new Date(item.closed_on).toLocaleDateString('es-MX'), propiedad: item.property_detail?.title ?? item.property, contacto: item.contact_detail?.name ?? item.contact, asesor: item.advisor.display_name, operation: item.operation, tipoOperacion: item.operation === 'venta' ? 'Venta' : 'Renta', monto: item.amount + ' ' + item.currency, comision: commission + percentage, status: item.status, estadoComision: item.commission?.status ?? 'pendiente' };
   }
 }

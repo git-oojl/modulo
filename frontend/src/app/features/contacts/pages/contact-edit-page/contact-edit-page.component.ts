@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { ContactDirectoryService } from '../../data-access/contact-directory.service';
-import { ContactRow } from '../../models/contact-row.model';
+import { AgentsApiService } from '../../../agents/data-access/agents-api.service';
+import { ContactsApiService, ContactDto, ContactPayload } from '../../data-access/contacts-api.service';
+import { OrganizationApiService, LeadSourceDto } from '../../../settings/data-access/organization-api.service';
+import { UserReference } from '../../../../core/api/api.models';
 
 @Component({
   selector: 'app-contact-edit-page',
@@ -14,74 +16,59 @@ import { ContactRow } from '../../models/contact-row.model';
 export class ContactEditPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly directory = inject(ContactDirectoryService);
+  private readonly contactsApi = inject(ContactsApiService);
+  private readonly agentsApi = inject(AgentsApiService);
+  private readonly organizationApi = inject(OrganizationApiService);
 
   readonly contactId = this.route.snapshot.paramMap.get('id') ?? '';
-  readonly contact = this.directory.findById(this.contactId);
+  readonly contact = signal<ContactDto | null>(null);
+  readonly agents = signal<UserReference[]>([]);
+  readonly sources = signal<LeadSourceDto[]>([]);
+  readonly error = signal('');
+  form: ContactPayload = this.emptyForm();
 
-  form = this.contact
-    ? {
-        name: this.contact.name,
-        surname: this.contact.surname,
-        phone: this.contact.phone,
-        email: this.contact.email,
-        contactType: this.contact.type,
-        source: this.contact.source,
-        operation: this.contact.operation,
-        propertyType: this.contact.propertyType,
-        minBudget: this.contact.minBudget,
-        maxBudget: this.contact.maxBudget,
-        zone: this.contact.zone,
-        bedrooms: this.contact.bedrooms,
-        agent: this.contact.agent,
-        status: this.contact.status,
-      }
-    : this.emptyForm();
+  constructor() {
+    if (this.contactId) {
+      this.contactsApi.get(this.contactId).subscribe({
+        next: (contact) => {
+          this.contact.set(contact);
+          this.form = {
+            name: contact.name,
+            phone: contact.phone,
+            email: contact.email,
+            source: contact.source,
+            status: contact.status,
+            notes: contact.notes,
+            advisor_id: contact.advisor?.id ?? null,
+          };
+        },
+        error: () => this.error.set('No se encontró este contacto.'),
+      });
+    }
+    this.agentsApi.list().subscribe({ next: ({ results }) => this.agents.set(results) });
+    this.organizationApi.listSources().subscribe({ next: ({ results }) => this.sources.set(results.filter((source) => source.active)) });
+  }
 
   saveChanges(): void {
-    if (!this.contact) {
+    if (!this.contact()) {
       return;
     }
 
-    const updated: ContactRow = {
-      ...this.contact,
-      name: this.form.name.trim(),
-      surname: this.form.surname.trim(),
-      phone: this.form.phone.trim(),
-      email: this.form.email.trim(),
-      type: this.form.contactType,
-      source: this.form.source,
-      operation: this.form.operation,
-      propertyType: this.form.propertyType,
-      minBudget: String(this.form.minBudget),
-      maxBudget: String(this.form.maxBudget),
-      zone: this.form.zone,
-      bedrooms: this.form.bedrooms,
-      agent: this.form.agent,
-      status: this.form.status,
-      property: `${this.form.propertyType}, ${this.form.bedrooms} rec.`,
-    };
-
-    this.directory.save(updated);
-    void this.router.navigate(['/app/contactos', this.contactId]);
+    this.contactsApi.update(this.contactId, this.form).subscribe({
+      next: () => void this.router.navigate(['/app/contactos', this.contactId]),
+      error: () => this.error.set('No se pudieron guardar los cambios.'),
+    });
   }
 
-  private emptyForm() {
+  private emptyForm(): ContactPayload {
     return {
       name: '',
-      surname: '',
       phone: '',
       email: '',
-      contactType: 'Comprador',
-      source: 'Recomendacion',
-      operation: 'Comprador',
-      propertyType: 'Casa',
-      minBudget: '',
-      maxBudget: '',
-      zone: '',
-      bedrooms: '1',
-      agent: 'Luis Ortega',
-      status: 'Nuevo',
+      source: null,
+      advisor_id: null,
+      status: 'prospecto' as const,
+      notes: '',
     };
   }
 }

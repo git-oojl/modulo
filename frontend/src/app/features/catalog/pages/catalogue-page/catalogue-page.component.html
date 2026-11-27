@@ -78,6 +78,9 @@
           <option value="casa">Casa</option>
           <option value="departamento">Departamento</option>
           <option value="terreno">Terreno</option>
+          <option value="oficina">Oficina</option>
+          <option value="comercial">Local comercial</option>
+          <option value="otro">Otro</option>
         </select>
       </label>
       <button class="clear-filters" type="button" (click)="clearFilters()">Limpiar</button>
@@ -118,8 +121,8 @@
               </div>
               <h3>{{ property.title }}</h3>
               <p class="price">
-                {{ formatPrice(property.price) }}
-                <span>{{ property.operation === 'renta' ? 'MXN / mes' : 'MXN' }}</span>
+                {{ formatPrice(property) }}
+                <span>{{ property.operation === 'renta' ? property.currency + ' / mes' : property.currency }}</span>
               </p>
               <div class="property-features">
                 @if (property.bedrooms !== undefined) {

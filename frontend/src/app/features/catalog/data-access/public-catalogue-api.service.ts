@@ -20,7 +20,7 @@ interface PublicPropertyResponse {
   operation: PublicPropertyOperation;
   type: PublicPropertyType;
   price: number;
-  currency: 'MXN';
+  currency: 'MXN' | 'USD';
   public_location: string;
   bedrooms?: number;
   bathrooms?: number;
@@ -52,6 +52,14 @@ export class PublicCatalogueApiService extends ApiClientService {
     return this.http
       .get<PaginatedResponse<PublicPropertyResponse>>(`${this.resource}/`, { params })
       .pipe(map(({ results }) => results.map((property) => this.toPublicProperty(property))));
+  }
+
+  getPublishedProperty(id: string): Observable<PublicPropertyResponse & { description: string; parking_spaces: number | null; land_area_m2: number | null; features: string[]; media: { id: string; file: string; alt_text: string; is_cover: boolean }[] }> {
+    return this.http.get<PublicPropertyResponse & { description: string; parking_spaces: number | null; land_area_m2: number | null; features: string[]; media: { id: string; file: string; alt_text: string; is_cover: boolean }[] }>(this.resource + '/' + id + '/');
+  }
+
+  createInquiry(payload: { property: string; name: string; phone: string; email?: string; message?: string; privacy_accepted: boolean }): Observable<{ id: string }> {
+    return this.http.post<{ id: string }>(this.apiRoot + '/public/inquiries/', payload);
   }
 
   private toPublicProperty(property: PublicPropertyResponse): PublicProperty {

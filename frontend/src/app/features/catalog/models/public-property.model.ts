@@ -1,5 +1,5 @@
 export type PublicPropertyOperation = 'venta' | 'renta';
-export type PublicPropertyType = 'casa' | 'departamento' | 'terreno';
+export type PublicPropertyType = 'casa' | 'departamento' | 'terreno' | 'oficina' | 'comercial' | 'otro';
 
 /** Safe, public-only property fields returned by /api/v1/public/properties/. */
 export interface PublicProperty {
@@ -8,7 +8,7 @@ export interface PublicProperty {
   operation: PublicPropertyOperation;
   type: PublicPropertyType;
   price: number;
-  currency: 'MXN';
+  currency: 'MXN' | 'USD';
   publicLocation: string;
   bedrooms?: number;
   bathrooms?: number;

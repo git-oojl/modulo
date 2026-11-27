@@ -114,12 +114,12 @@ export class CataloguePageComponent {
       });
   }
 
-  formatPrice(price: number): string {
+  formatPrice(property: PublicProperty): string {
     return new Intl.NumberFormat('es-MX', {
       style: 'currency',
-      currency: 'MXN',
+      currency: property.currency,
       maximumFractionDigits: 0,
-    }).format(price);
+    }).format(property.price);
   }
 
   typeLabel(type: PublicPropertyType): string {
@@ -127,6 +127,9 @@ export class CataloguePageComponent {
       casa: 'Casa',
       departamento: 'Departamento',
       terreno: 'Terreno',
+      oficina: 'Oficina',
+      comercial: 'Local comercial',
+      otro: 'Otro',
     };
     return labels[type];
   }

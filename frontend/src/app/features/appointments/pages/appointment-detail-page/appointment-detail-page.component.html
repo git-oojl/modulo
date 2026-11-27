@@ -1,1 +1,11 @@
-<app-feature-placeholder [page]="page" />
+<section class="placeholder">
+  @if (appointment(); as item) {
+    <h1>Cita: {{ item.contact_detail?.name || item.contact }}</h1>
+    <p>{{ item.starts_at | date: 'medium' }} · {{ item.purpose }} · {{ item.status }}</p>
+    <p>Propiedad: {{ item.property_detail?.title || 'Sin propiedad' }}</p>
+    <p>Asesor: {{ item.advisor.display_name }}</p><p>Notas: {{ item.notes || '—' }}</p><p>Resultado: {{ item.result || 'Pendiente' }}</p>
+    @if (item.status !== 'completada') { <label>Resultado<input [value]="completion()" (input)="completion.set($any($event.target).value)" /></label><button type="button" [disabled]="completing()" (click)="complete()">Completar cita</button> }
+    <a [routerLink]="['/app/citas', item.id, 'editar']">Editar cita</a>
+  } @else { <h1>Detalle de cita</h1><p>{{ error() || 'Cargando…' }}</p> }
+  <p><a routerLink="/app/citas">Volver a citas</a></p>
+</section>

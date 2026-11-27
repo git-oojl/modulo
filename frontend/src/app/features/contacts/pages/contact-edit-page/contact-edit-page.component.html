@@ -1,11 +1,11 @@
-@if (contact; as contact) {
+@if (contact(); as contact) {
   <section class="contact-edit" aria-labelledby="contact-edit-title">
     <div class="contact-edit__content">
       <nav class="contact-edit__breadcrumb" aria-label="Migas de pan">
         <a routerLink="/app/contactos">Contactos</a>
         <span aria-hidden="true">/</span>
         <a [routerLink]="['/app/contactos', contact.id]"
-          >{{ contact.name }} {{ contact.surname }}</a
+          >{{ contact.name }}</a
         >
         <span aria-hidden="true">/</span>
         <span>Editar</span>
@@ -13,7 +13,7 @@
 
       <header class="contact-edit__header">
         <h1 id="contact-edit-title">Editar contacto</h1>
-        <p>{{ contact.id }} · {{ contact.name }} {{ contact.surname }}</p>
+        <p>{{ contact.id }} · {{ contact.phone }}</p>
       </header>
 
       <form class="contact-edit__form" (ngSubmit)="saveChanges()">
@@ -25,10 +25,6 @@
               <input name="name" [(ngModel)]="form.name" />
             </label>
             <label class="contact-edit__field">
-              <span>Apellidos</span>
-              <input name="surname" [(ngModel)]="form.surname" />
-            </label>
-            <label class="contact-edit__field">
               <span>Teléfono</span>
               <input name="phone" type="tel" [(ngModel)]="form.phone" />
             </label>
@@ -37,65 +33,23 @@
               <input name="email" type="email" [(ngModel)]="form.email" />
             </label>
             <label class="contact-edit__field">
-              <span>Tipo de contacto</span>
-              <select name="contactType" [(ngModel)]="form.contactType">
-                <option>Comprador</option>
-                <option>Vendedor</option>
-                <option>Arrendatario</option>
-              </select>
-            </label>
-            <label class="contact-edit__field">
               <span>Fuente</span>
               <select name="source" [(ngModel)]="form.source">
-                <option value="Recomendacion">Recomendación</option>
-                <option>Redes sociales</option>
-                <option value="Pagina web">Página web</option>
-                <option>Otro</option>
+                <option [ngValue]="null">Sin fuente</option>
+                @for (source of sources(); track source.id) {
+                  <option [value]="source.id">{{ source.name }}</option>
+                }
               </select>
             </label>
           </div>
         </section>
 
         <section class="contact-edit__card" aria-labelledby="edit-interest-title">
-          <h2 id="edit-interest-title">Interés inmobiliario</h2>
+          <h2 id="edit-interest-title">Notas de la relación</h2>
           <div class="contact-edit__fields">
             <label class="contact-edit__field">
-              <span>Operación</span>
-              <select name="operation" [(ngModel)]="form.operation">
-                <option value="Comprador">Compra</option>
-                <option value="Vendedor">Venta</option>
-                <option value="Renta">Renta</option>
-              </select>
-            </label>
-            <label class="contact-edit__field">
-              <span>Tipo de inmueble</span>
-              <select name="propertyType" [(ngModel)]="form.propertyType">
-                <option>Casa</option>
-                <option>Departamento</option>
-                <option>Terreno</option>
-                <option>Local</option>
-              </select>
-            </label>
-            <label class="contact-edit__field">
-              <span>Presupuesto mínimo</span>
-              <input name="minBudget" type="number" min="0" [(ngModel)]="form.minBudget" />
-            </label>
-            <label class="contact-edit__field">
-              <span>Presupuesto máximo</span>
-              <input name="maxBudget" type="number" min="0" [(ngModel)]="form.maxBudget" />
-            </label>
-            <label class="contact-edit__field">
-              <span>Zona de preferencia</span>
-              <input name="zone" [(ngModel)]="form.zone" />
-            </label>
-            <label class="contact-edit__field">
-              <span>Recámaras</span>
-              <select name="bedrooms" [(ngModel)]="form.bedrooms">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>4+</option>
-              </select>
+              <span>Notas</span>
+              <textarea name="notes" [(ngModel)]="form.notes"></textarea>
             </label>
           </div>
         </section>
@@ -105,19 +59,21 @@
           <div class="contact-edit__fields contact-edit__fields--compact">
             <label class="contact-edit__field">
               <span>Agente responsable</span>
-              <select name="agent" [(ngModel)]="form.agent">
-                <option>Luis Ortega</option>
-                <option>Ana Barajas</option>
-                <option>Carlos Mendez</option>
-                <option>Elena Cruz</option>
+              <select name="agent" [(ngModel)]="form.advisor_id">
+                <option [ngValue]="null">Sin asignar</option>
+                @for (agent of agents(); track agent.id) {
+                  <option [value]="agent.id">{{ agent.display_name }}</option>
+                }
               </select>
             </label>
             <label class="contact-edit__field">
               <span>Estatus</span>
               <select name="status" [(ngModel)]="form.status">
-                <option>Nuevo</option>
-                <option>Calificado</option>
-                <option>En seguimiento</option>
+                <option value="prospecto">Prospecto</option>
+                <option value="cliente_activo">Cliente activo</option>
+                <option value="cliente_cerrado">Cliente cerrado</option>
+                <option value="perdido">Perdido</option>
+                <option value="inactivo">Inactivo</option>
               </select>
             </label>
           </div>
@@ -138,7 +94,7 @@
 } @else {
   <section class="contact-edit" aria-labelledby="contact-edit-title">
     <div class="contact-edit__content">
-      <h1 id="contact-edit-title">No se encontró este contacto</h1>
+      <h1 id="contact-edit-title">{{ error() || 'Cargando contacto…' }}</h1>
       <a routerLink="/app/contactos">Volver a Contactos</a>
     </div>
   </section>

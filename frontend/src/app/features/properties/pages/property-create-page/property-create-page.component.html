@@ -1,1 +1,21 @@
-<app-feature-placeholder [page]="page" />
+<section class="placeholder">
+  <h1>Nueva propiedad</h1>
+  <p>Alta de inmueble, estado y visibilidad pública.</p>
+  @if (error()) { <p role="alert">{{ error() }}</p> }
+  <form (ngSubmit)="save()">
+    <label>Título<input name="title" required [(ngModel)]="form.title" /></label>
+    <label>Tipo<select name="type" [(ngModel)]="form.type"><option value="casa">Casa</option><option value="departamento">Departamento</option><option value="terreno">Terreno</option><option value="oficina">Oficina</option><option value="comercial">Comercial</option><option value="otro">Otro</option></select></label>
+    <label>Operación<select name="operation" [(ngModel)]="form.operation"><option value="venta">Venta</option><option value="renta">Renta</option></select></label>
+    <label>Estado<select name="status" [(ngModel)]="form.status"><option value="borrador">Borrador</option><option value="activa">Activa</option><option value="reservada">Reservada</option></select></label>
+    <label>Precio<input name="price" required type="number" min="0" [(ngModel)]="form.price" /></label>
+    <label>Moneda<input name="currency" required maxlength="3" [(ngModel)]="form.currency" /></label>
+    <label>Ciudad<input name="city" required [(ngModel)]="form.city" /></label>
+    <label>Colonia<input name="neighborhood" [(ngModel)]="form.neighborhood" /></label>
+    <label>Dirección<input name="address" [(ngModel)]="form.address" /></label>
+    <label>Ubicación pública<input name="publicLocation" [(ngModel)]="form.public_location" /></label>
+    <label>Descripción<textarea name="description" [(ngModel)]="form.description"></textarea></label>
+    <label><input name="public" type="checkbox" [(ngModel)]="form.is_public" /> Publicar en catálogo</label>
+    <button type="submit">Guardar propiedad</button>
+    <a routerLink="/app/propiedades">Cancelar</a>
+  </form>
+</section>

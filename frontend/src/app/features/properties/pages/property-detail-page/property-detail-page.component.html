@@ -1,1 +1,17 @@
-<app-feature-placeholder [page]="page" />
+<section class="placeholder">
+  @if (property(); as item) {
+    <h1>{{ item.title }}</h1>
+    <p>{{ item.type }} · {{ item.operation }} · {{ item.status }}</p>
+    <p>{{ item.price }} {{ item.currency }} · {{ item.city }} {{ item.neighborhood }}</p>
+    <p>{{ item.description || 'Sin descripción.' }}</p>
+    <p>Responsable: {{ item.advisor?.display_name || 'Sin asignar' }}</p>
+    <p>Visibilidad pública: {{ item.is_public ? 'Publicada' : 'Interna' }}</p>
+    <h2>Medios</h2>
+    <ul>@for (media of item.media; track media.id) { <li><a [href]="media.file" target="_blank" rel="noopener">{{ media.alt_text || 'Archivo de propiedad' }}</a></li> } @empty { <li>Sin medios adjuntos.</li> }</ul>
+    <a [routerLink]="['/app/propiedades', item.id, 'editar']">Editar propiedad</a>
+  } @else {
+    <h1>Detalle de propiedad</h1>
+    <p>{{ error() || 'Cargando…' }}</p>
+  }
+  <p><a routerLink="/app/propiedades">Volver al inventario</a></p>
+</section>
