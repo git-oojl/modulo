@@ -43,7 +43,8 @@
           <span>Acepto que la empresa use mis datos para evaluar mi solicitud de acceso.</span>
         </label>
 
-        <button class="submit-button" type="submit">Enviar Solicitud</button>
+        @if (error()) { <p role="alert">{{ error() }}</p> }
+        <button class="submit-button" type="submit" [disabled]="submitting()">{{ submitting() ? 'Enviando…' : 'Enviar Solicitud' }}</button>
       </form>
       <a class="back-link" routerLink="/login">Volver a Iniciar Sesión</a>
     </div>

@@ -1,74 +1,29 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { UsersApiService, AccessRequestDto } from '../../data-access/users-api.service';
 
-type RequestStatus = 'Pendiente' | 'Aprobada' | 'Rechazada';
 type RequestFilter = 'pendientes' | 'todas';
-
-interface AccessRequest {
-  id: number;
-  name: string;
-  email: string;
-  position: string;
-  date: string;
-  status: RequestStatus;
-}
 
 @Component({
   selector: 'app-access-request-list-page',
+  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './access-request-list-page.component.html',
   styleUrl: './access-request-list-page.component.scss',
 })
 export class AccessRequestListPageComponent {
+  private readonly usersApi = inject(UsersApiService);
   readonly filter = signal<RequestFilter>('pendientes');
-  readonly requests = signal<AccessRequest[]>([
-    {
-      id: 1,
-      name: 'Ana López',
-      email: 'ana.lopez@gmail.com',
-      position: 'Asesora',
-      date: '14 nov 2026',
-      status: 'Pendiente',
-    },
-    {
-      id: 2,
-      name: 'Carlos Méndez',
-      email: 'carlos.mendez@gmail.com',
-      position: 'Gerencia',
-      date: '13 nov 2026',
-      status: 'Pendiente',
-    },
-    {
-      id: 3,
-      name: 'Lucía Ramírez',
-      email: 'lucia.ramirez@gmail.com',
-      position: 'Asesora',
-      date: '12 nov 2026',
-      status: 'Pendiente',
-    },
-    {
-      id: 4,
-      name: 'Diego Torres',
-      email: 'diego.torres@gmail.com',
-      position: 'Administración',
-      date: '10 nov 2026',
-      status: 'Aprobada',
-    },
-    {
-      id: 5,
-      name: 'Sofía Castillo',
-      email: 'sofia.castillo@gmail.com',
-      position: 'Asesora',
-      date: '08 nov 2026',
-      status: 'Rechazada',
-    },
-  ]);
+  readonly requests = signal<AccessRequestDto[]>([]);
+  readonly error = signal('');
+  constructor() { this.reload(); }
   readonly pendingCount = computed(
-    () => this.requests().filter((request) => request.status === 'Pendiente').length,
+    () => this.requests().filter((request) => request.status === 'pendiente').length,
   );
   readonly visibleRequests = computed(() => {
     const requests = this.requests();
     return this.filter() === 'pendientes'
-      ? requests.filter((request) => request.status === 'Pendiente')
+      ? requests.filter((request) => request.status === 'pendiente')
       : requests;
   });
 
@@ -76,9 +31,9 @@ export class AccessRequestListPageComponent {
     this.filter.set(filter);
   }
 
-  updateStatus(id: number, status: Exclude<RequestStatus, 'Pendiente'>): void {
-    this.requests.update((requests) =>
-      requests.map((request) => (request.id === id ? { ...request, status } : request)),
-    );
+  reload(): void { this.usersApi.listRequests().subscribe({ next: ({ results }) => this.requests.set(results), error: () => this.error.set('No se pudieron cargar las solicitudes.') }); }
+  updateStatus(id: string, status: 'aprobada' | 'rechazada'): void {
+    const request = status === 'aprobada' ? this.usersApi.approveRequest(id) : this.usersApi.rejectRequest(id);
+    request.subscribe({ next: (updated) => this.requests.update((items) => items.map((item) => item.id === id ? updated : item)), error: () => this.error.set('No se pudo actualizar la solicitud.') });
   }
 }

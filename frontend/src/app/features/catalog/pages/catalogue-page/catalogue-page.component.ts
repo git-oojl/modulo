@@ -33,7 +33,7 @@ export class CataloguePageComponent {
   private readonly searchChanges = new Subject<string>();
   private loadSequence = 0;
 
-  readonly usesDemoData = this.catalogueApi.usesDemoData;
+  readonly usesDemoData = false;
   readonly properties = signal<PublicProperty[]>([]);
   readonly isLoading = signal(true);
   readonly hasLoadError = signal(false);

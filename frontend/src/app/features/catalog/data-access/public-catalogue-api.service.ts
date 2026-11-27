@@ -1,13 +1,12 @@
-import { Injectable, isDevMode } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
-import { map, Observable, of } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { ApiClientService } from '../../../core/api/api-client.service';
 import {
   PublicProperty,
   PublicPropertyOperation,
   PublicPropertyType,
 } from '../models/public-property.model';
-import { demoPublicProperties } from './public-property.demo-data';
 
 export interface PublicCatalogueFilters {
   search?: string;
@@ -37,13 +36,8 @@ interface PaginatedResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class PublicCatalogueApiService extends ApiClientService {
   readonly resource = `${this.apiRoot}/public/properties`;
-  readonly usesDemoData = isDevMode();
 
   listPublishedProperties(filters: PublicCatalogueFilters = {}): Observable<PublicProperty[]> {
-    if (this.usesDemoData) {
-      return of(demoPublicProperties);
-    }
-
     let params = new HttpParams();
     if (filters.search?.trim()) {
       params = params.set('q', filters.search.trim());

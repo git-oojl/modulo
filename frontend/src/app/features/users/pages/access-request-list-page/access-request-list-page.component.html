@@ -2,7 +2,7 @@
   <header class="page-header">
     <div class="breadcrumb">Administración <span>›</span> Usuarios</div>
     <h1>Solicitud de acceso</h1>
-    <p class="demo-note">Solicitudes de ejemplo. Los cambios no se guardan.</p>
+    @if (error()) { <p class="demo-note" role="alert">{{ error() }}</p> }
   </header>
 
   <section class="requests-section" aria-labelledby="requests-heading">
@@ -46,27 +46,27 @@
                 <strong>{{ request.name }}</strong>
                 <span>{{ request.email }}</span>
               </td>
-              <td>{{ request.position }}</td>
-              <td>{{ request.date }}</td>
+              <td>{{ request.requested_role }}</td>
+              <td>{{ request.created_at | date: 'mediumDate' }}</td>
               <td>
-                <span class="status" [class]="'status ' + request.status.toLowerCase()">{{
+                <span class="status" [class]="'status ' + request.status">{{
                   request.status
                 }}</span>
               </td>
               <td>
-                @if (request.status === 'Pendiente') {
+                @if (request.status === 'pendiente') {
                   <div class="row-actions">
                     <button
                       class="approve"
                       type="button"
-                      (click)="updateStatus(request.id, 'Aprobada')"
+                      (click)="updateStatus(request.id, 'aprobada')"
                     >
                       Aprobar
                     </button>
                     <button
                       class="reject"
                       type="button"
-                      (click)="updateStatus(request.id, 'Rechazada')"
+                      (click)="updateStatus(request.id, 'rechazada')"
                     >
                       Rechazar
                     </button>
